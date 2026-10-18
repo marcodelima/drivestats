@@ -93,6 +93,24 @@
                 </div>
             </div>
 
+            <!-- SEÇÃO DE AVISOS EM DESTAQUE NA TELA INICIAL -->
+            <div id="secaoAlertasDestaque" class="hidden bg-gray-900/90 border border-red-500/40 p-4 rounded-2xl shadow-lg space-y-3">
+                <h3 class="text-sm font-bold text-red-400 flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation animate-pulse"></i> Avisos e Manutenções Urgentes
+                </h3>
+                <div id="listaAlertasDestaque" class="space-y-2"></div>
+            </div>
+
+            <!-- PREVISÃO DO PRÓXIMO ABASTECIMENTO -->
+            <div class="bg-gray-900/90 border border-gray-800 p-4 rounded-2xl shadow space-y-2">
+                <h3 class="text-sm font-bold text-emerald-400 flex items-center gap-2">
+                    <i class="fa-solid fa-gas-pump"></i> Previsão do Próximo Abastecimento
+                </h3>
+                <div id="cardPrevisaoAbastecimento" class="text-xs text-gray-300 leading-relaxed">
+                    Calculando histórico...
+                </div>
+            </div>
+
             <div class="bg-gray-900/90 border border-gray-800 p-4 rounded-2xl shadow">
                 <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2"><i class="fa-solid fa-chart-line text-emerald-400"></i> Histórico de Consumo (km/L)</h3>
                 <div class="relative h-56 w-full">
@@ -852,9 +870,103 @@
             }
             document.getElementById('statMediaConsumo').textContent = mediaConsumo.toFixed(1) + ' km/L';
 
+            renderizarAlertasDestaque(avisos, veiculo.odometro);
+            renderizarPrevisaoAbastecimento(abasts, veiculo.odometro);
+
             renderizarListas(abasts, manuts, avisos);
             renderizarGrafico();
             renderizarAbaAjustes();
+        }
+
+        function renderizarAlertasDestaque(avisos, odometroAtual) {
+            const secao = document.getElementById('secaoAlertasDestaque');
+            const lista = document.getElementById('listaAlertasDestaque');
+            if(!secao || !lista) return;
+
+            // Filtrar avisos vencidos ou próximos (faltando menos de 500 km ou já ultrapassados)
+            const urgentes = avisos.filter(av => {
+                let diff = av.limite - odometroAtual;
+                return diff <= 500;
+            });
+
+            if (urgentes.length > 0) {
+                secao.classList.remove('hidden');
+                lista.innerHTML = '';
+                urgentes.forEach(av => {
+                    let diff = av.limite - odometroAtual;
+                    let statusTxt = diff < 0 ? `Vencido há ${Math.abs(diff).toLocaleString()} km!` : `Vence em ${diff.toLocaleString()} km!`;
+                    let corBorda = diff < 0 ? 'border-red-500 bg-red-950/40 text-red-300' : 'border-yellow-500 bg-yellow-950/30 text-yellow-300';
+
+                    lista.innerHTML += `
+                        <div class="border ${corBorda} p-3 rounded-xl flex justify-between items-center text-xs">
+                            <div>
+                                <p class="font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ${av.titulo}</p>
+                                <p class="text-gray-300 mt-0.5">Limite: ${av.limite.toLocaleString()} km • Odômetro Atual: ${odometroAtual.toLocaleString()} km</p>
+                            </div>
+                            <span class="font-extrabold px-2 py-1 rounded bg-black/40 text-[11px]">${statusTxt}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                secao.classList.add('hidden');
+            }
+        }
+
+        function renderizarPrevisaoAbastecimento(abasts, odometroAtual) {
+            const card = document.getElementById('cardPrevisaoAbastecimento');
+            if(!card) return;
+
+            if (abasts.length < 2) {
+                card.innerHTML = `<p class="text-gray-400">Registre pelo menos 2 abastecimentos para habilitar a previsão inteligente.</p>`;
+                return;
+            }
+
+            // Ordenar do mais antigo para o mais recente
+            let sorted = [...abasts].sort((a,b) => new Date(a.data) - new Date(b.data));
+            let primeiro = sorted[0];
+            let ultimo = sorted[sorted.length - 1];
+
+            let diffDias = (new Date(ultimo.data) - new Date(primeiro.data)) / (1000 * 60 * 60 * 24);
+            if (diffDias <= 0) diffDias = 1;
+
+            let kmTotaisIntervalo = ultimo.odometro - primeiro.odometro;
+            if (kmTotaisIntervalo <= 0) kmTotaisIntervalo = 1000;
+
+            let mediaKmPorDia = kmTotaisIntervalo / diffDias;
+
+            // Intervalo médio em km entre abastecimentos consecutivos
+            let somaKmAbast = 0;
+            for(let i = 1; i < sorted.length; i++) {
+                somaKmAbast += (sorted[i].odometro - sorted[i-1].odometro);
+            }
+            let mediaKmPorAbastecimento = somaKmAbast / (sorted.length - 1);
+
+            let kmUltimoAbastecimento = ultimo.odometro;
+            let kmProximoAbastecimentoEst = kmUltimoAbastecimento + mediaKmPorAbastecimento;
+            let kmFaltantes = kmProximoAbastecimentoEst - odometroAtual;
+            if (kmFaltantes < 0) kmFaltantes = 0;
+
+            let diasFaltantes = mediaKmPorDia > 0 ? Math.round(kmFaltantes / mediaKmPorDia) : 5;
+            let dataPrevista = new Date();
+            dataPrevista.setDate(dataPrevista.getDate() + diasFaltantes);
+            let dataFormatada = dataPrevista.toLocaleDateString('pt-BR');
+
+            card.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-center">
+                    <div class="bg-gray-800/80 p-2.5 rounded-lg border border-gray-700/60">
+                        <span class="text-gray-400 block text-[10px]">Média de Rodagem</span>
+                        <span class="text-white font-bold text-sm">${mediaKmPorDia.toFixed(1)} km / dia</span>
+                    </div>
+                    <div class="bg-gray-800/80 p-2.5 rounded-lg border border-gray-700/60">
+                        <span class="text-gray-400 block text-[10px]">Falta Aproximadamente</span>
+                        <span class="text-emerald-400 font-bold text-sm">${Math.round(kmFaltantes).toLocaleString()} km</span>
+                    </div>
+                    <div class="bg-gray-800/80 p-2.5 rounded-lg border border-gray-700/60">
+                        <span class="text-gray-400 block text-[10px]">Previsão de Data</span>
+                        <span class="text-yellow-400 font-bold text-sm">${dataFormatada} (${diasFaltantes} dias)</span>
+                    </div>
+                </div>
+            `;
         }
 
         function renderizarListas(abasts, manuts, avisos) {
@@ -1058,7 +1170,6 @@
 
             let precoInicial = (item.litros > 0 && item.valorTotal > 0) ? (item.valorTotal / item.litros).toFixed(3) : '';
 
-            // Filtrar locais cadastrados que são postos
             let postosCadastrados = db.locais.filter(l => l.tipo === 'posto');
             let optionsPostos = postosCadastrados.map(p => `<option value="${p.nome}" ${item.posto === p.nome ? 'selected' : ''}>${p.nome}</option>`).join('');
 
