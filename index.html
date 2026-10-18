@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriveStats - Gestão Local de Veículos</title>
+    <!-- FAVICON (MINI ÍCONE NA ABA) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%2310b981%22><path d=%22M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z%22/></svg>">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome para ícones visuais -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #0b0f19; color: #f3f4f6; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans pb-24">
+
+    <!-- CABEÇALHO -->
+    <header class="bg-gray-900 border-b border-gray-800 sticky top-0 z-40 px-4 py-3 shadow-md">
+        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-2">
+                <div class="bg-emerald-500 text-gray-900 p-2 rounded-xl font-bold text-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                    <i class="fa-solid fa-gauge-high"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold text-emerald-400 tracking-wide">DriveStats</h1>
+                    <p class="text-xs text-gray-400">Gestão Local de Frota</p>
+                </div>
+            </div>
+
+            <!-- SELETOR DE VEÍCULOS, BOTÃO SAIR & SALVAR E BOTÃO NOVO VEÍCULO -->
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap sm:flex-nowrap">
+                <select id="selectVeiculoHeader" onchange="mudarVeiculoAtivo(this.value)" class="bg-gray-800 border border-gray-700 text-white text-sm font-medium rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none flex-1 sm:flex-none">
+                </select>
+                
+                <!-- BOTÃO SAIR & SALVAR -->
+                <button id="btnSairSalvarHeader" onclick="sairESalvarTXT()" class="bg-red-600/30 hover:bg-red-600/50 text-red-400 border border-red-500/50 font-bold px-3 py-2 rounded-lg text-sm hidden items-center gap-1 shadow transition" title="Salvar alterações finais no arquivo e encerrar vínculo">
+                    <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">Sair & Salvar</span>
+                </button>
+
+                <button onclick="abrirModalVeiculo()" class="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold px-3 py-2 rounded-lg text-sm flex items-center gap-1 shadow-md transition" title="Adicionar Novo Veículo">
+                    <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Veículo</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="max-w-4xl mx-auto w-full px-4 mt-4 flex-1">
+        
+        <!-- STATUS DO BANCO LOCAL & FILE SYSTEM API -->
+        <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl mb-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs">
+            <div class="flex items-center gap-2">
+                <span id="statusTxtDot" class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></span>
+                <span id="statusTxtTexto" class="text-gray-300 font-medium">Modo Local (Não Sincronizado)</span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button id="btnVincularTxt" onclick="vincularArquivoTXT()" class="bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-400 border border-emerald-500/50 px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-folder-open"></i> Vincular / Alterar Arquivo .TXT
+                </button>
+                <button onclick="salvarBancoTXT()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1" title="Baixar Cópia Manual">
+                    <i class="fa-solid fa-download"></i> Baixar TXT
+                </button>
+            </div>
+        </div>
+
+        <!-- BANNER DO VEÍCULO ATIVO -->
+        <div id="bannerVeiculoAtivo" class="bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700/80 rounded-2xl p-4 shadow-xl mb-6 relative overflow-hidden">
+            <!-- Injetado por JS -->
+        </div>
+
+        <!-- ABAS DE CONTEÚDO -->
+        <div id="abaVisaoGeral" class="tab-content space-y-6">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-gray-900/90 border border-gray-800 p-3 rounded-xl shadow">
+                    <span class="text-xs text-gray-400 flex items-center gap-1"><i class="fa-solid fa-gas-pump text-emerald-400"></i> Média Geral</span>
+                    <p id="statMediaConsumo" class="text-xl font-bold text-white mt-1">0.0 km/L</p>
+                </div>
+                <div class="bg-gray-900/90 border border-gray-800 p-3 rounded-xl shadow">
+                    <span class="text-xs text-gray-400 flex items-center gap-1"><i class="fa-solid fa-road text-emerald-400"></i> Odômetro</span>
+                    <p id="statOdometro" class="text-xl font-bold text-white mt-1">0 km</p>
+                </div>
+                <div class="bg-gray-900/90 border border-gray-800 p-3 rounded-xl shadow">
+                    <span class="text-xs text-gray-400 flex items-center gap-1"><i class="fa-solid fa-coins text-emerald-400"></i> Gasto Total</span>
+                    <p id="statGastoTotal" class="text-xl font-bold text-white mt-1">R$ 0,00</p>
+                </div>
+                <div class="bg-gray-900/90 border border-gray-800 p-3 rounded-xl shadow">
+                    <span class="text-xs text-gray-400 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-yellow-400"></i> Alertas</span>
+                    <p id="statQtdAlertas" class="text-xl font-bold text-yellow-400 mt-1">0</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-900/90 border border-gray-800 p-4 rounded-2xl shadow">
+                <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2"><i class="fa-solid fa-chart-line text-emerald-400"></i> Histórico de Consumo (km/L)</h3>
+                <div class="relative h-56 w-full">
+                    <canvas id="graficoConsumo"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA ABASTECIMENTOS -->
+        <div id="abaAbastecimentos" class="tab-content hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-gas-pump text-emerald-400"></i> Abastecimentos</h2>
+                <button onclick="abrirModalAbastecimento()" class="bg-emerald-500 hover:bg-emerald-400 text-gray-950 px-3 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-1">
+                    <i class="fa-solid fa-plus"></i> Novo Abastecimento
+                </button>
+            </div>
+            <div id="listaAbastecimentos" class="space-y-3"></div>
+        </div>
+
+        <!-- ABA MANUTENÇÕES -->
+        <div id="abaManutencoes" class="tab-content hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-wrench text-blue-400"></i> Manutenções</h2>
+                <button onclick="abrirModalManutencao()" class="bg-blue-500 hover:bg-blue-400 text-gray-950 px-3 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-1">
+                    <i class="fa-solid fa-plus"></i> Nova Manutenção
+                </button>
+            </div>
+            <div id="listaManutencoes" class="space-y-3"></div>
+        </div>
+
+        <!-- ABA AVISOS -->
+        <div id="abaAvisos" class="tab-content hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-bell text-yellow-400"></i> Avisos & Preventivas</h2>
+                <button onclick="abrirModalAviso()" class="bg-yellow-500 hover:bg-yellow-400 text-gray-950 px-3 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-1">
+                    <i class="fa-solid fa-plus"></i> Novo Aviso
+                </button>
+            </div>
+            <div id="listaAvisos" class="space-y-3"></div>
+        </div>
+
+        <!-- ABA LOCAIS -->
+        <div id="abaLocais" class="tab-content hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-location-dot text-red-400"></i> Postos e Oficinas</h2>
+                <button onclick="abrirModalLocal()" class="bg-red-500 hover:bg-red-400 text-gray-950 px-3 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-1">
+                    <i class="fa-solid fa-plus"></i> Novo Local
+                </button>
+            </div>
+            <div id="listaLocais" class="space-y-3"></div>
+        </div>
+
+        <!-- ABA AJUSTES -->
+        <div id="abaAjustes" class="tab-content hidden space-y-6">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-gear text-gray-300"></i> Ajustes e Banco de Dados</h2>
+            
+            <!-- GESTÃO DE VEÍCULOS/FROTA -->
+            <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl space-y-3 shadow-md">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-sm text-gray-200 flex items-center gap-2"><i class="fa-solid fa-car text-emerald-400"></i> Gerenciar Frota de Veículos</h3>
+                        <p class="text-xs text-gray-400 mt-0.5">Edite ou remova qualquer veículo registrado na sua conta.</p>
+                    </div>
+                    <button onclick="abrirModalVeiculo()" class="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 shadow">
+                        <i class="fa-solid fa-plus"></i> Adicionar
+                    </button>
+                </div>
+                <div id="listaGerenciarVeiculos" class="space-y-2 pt-2"></div>
+            </div>
+
+            <!-- BLOCO 1: BANCO DE DADOS LOCAL (.TXT) -->
+            <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl space-y-3 shadow-md">
+                <h3 class="font-bold text-sm text-emerald-400 flex items-center gap-2"><i class="fa-solid fa-database"></i> Sincronização Automática (.TXT)</h3>
+                <p class="text-xs text-gray-400">Vincule o arquivo de backup `.txt`. Toda vez que você salvar qualquer alteração, o arquivo será atualizado no mesmo momento.</p>
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <button onclick="vincularArquivoTXT()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-2 transition">
+                        <i class="fa-solid fa-folder-open"></i> Vincular / Alterar Arquivo .TXT
+                    </button>
+                    <button onclick="salvarBancoTXT()" class="bg-gray-800 hover:bg-gray-700 text-white px-3.5 py-2 rounded-lg text-sm font-medium border border-gray-700 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-download text-emerald-400"></i> Baixar Cópia TXT Manual
+                    </button>
+                </div>
+            </div>
+
+            <!-- BLOCO 2: EXPORTAR DADOS E RELATÓRIOS -->
+            <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl space-y-3 shadow-md">
+                <h3 class="font-bold text-sm text-yellow-400 flex items-center gap-2"><i class="fa-solid fa-file-export"></i> Exportar Relatórios</h3>
+                <p class="text-xs text-gray-400">Gere relatórios formatados para visualização ou análise no Excel.</p>
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <button onclick="exportarTodosVeiculosExcel()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3.5 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-2 transition">
+                        <i class="fa-solid fa-file-excel text-emerald-300"></i> Exportar Frota Completa (.xls)
+                    </button>
+                    <button onclick="exportarExcelCompleto()" class="bg-gray-800 hover:bg-gray-700 text-white px-3.5 py-2 rounded-lg text-sm font-medium border border-gray-700 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-file-excel text-emerald-400"></i> Excel (Veículo Ativo)
+                    </button>
+                    <button onclick="exportarCSV()" class="bg-gray-800 hover:bg-gray-700 text-white px-3.5 py-2 rounded-lg text-sm font-medium border border-gray-700 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-file-csv text-blue-400"></i> CSV (Veículo Ativo)
+                    </button>
+                </div>
+            </div>
+
+            <!-- BLOCO 3: IMPORTAR TABELAS -->
+            <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl space-y-3 shadow-md">
+                <h3 class="font-bold text-sm text-blue-400 flex items-center gap-2"><i class="fa-solid fa-file-import"></i> Importar Tabelas</h3>
+                <p class="text-xs text-gray-400">Adicione registros ou importe o arquivo de backup `.txt` completo.</p>
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <button onclick="triggerImportarExcel()" class="bg-teal-600 hover:bg-teal-500 text-white px-3.5 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-2 transition">
+                        <i class="fa-solid fa-file-excel text-teal-200"></i> Importar Tabela / Backup (.txt/.csv)
+                    </button>
+                    <input type="file" id="inputImportarExcelFile" accept=".csv, .xls, .xlsx, .txt, .json" class="hidden" onchange="importarDadosExcelCSV(event)">
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- POP-UP DE DESTAQUE PARA BUSCAR O ARQUIVO DE BACKUP -->
+    <div id="modalBackupObrigatorio" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-900 border-2 border-emerald-500/80 rounded-2xl w-full max-w-md p-6 shadow-2xl text-center space-y-4 animate-bounce-subtle">
+            <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-3xl shadow-lg shadow-emerald-500/20">
+                <i class="fa-solid fa-folder-open animate-pulse"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-extrabold text-white">Localizar Arquivo de Backup</h2>
+                <p class="text-xs text-gray-300 mt-2 leading-relaxed">
+                    Para garantir que suas alterações sejam sincronizadas em tempo real, por favor selecione o seu arquivo de backup <code class="text-emerald-400 font-mono">.txt</code> agora.
+                </p>
+            </div>
+            <div class="pt-2 flex flex-col gap-2">
+                <button onclick="vincularArquivoTXT(true)" class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-extrabold px-4 py-3 rounded-xl text-sm shadow-lg shadow-emerald-500/30 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-file-arrow-up"></i> Selecionar Arquivo .TXT de Backup
+                </button>
+                <button onclick="fecharModalBackupObrigatorio()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white font-medium px-4 py-2.5 rounded-xl text-xs transition">
+                    Continuar sem arquivo (Modo Local Temporário)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MENU INFERIOR FIXO -->
+    <nav class="bg-gray-900 border-t border-gray-800 fixed bottom-0 left-0 right-0 z-40 shadow-2xl">
+        <div class="max-w-4xl mx-auto grid grid-cols-6 py-2 text-center">
+            <button onclick="mudarAba('VisaoGeral')" id="btnAbaVisaoGeral" class="flex flex-col items-center justify-center text-emerald-400 transition">
+                <i class="fa-solid fa-chart-pie text-lg mb-1"></i>
+                <span class="text-[10px] font-medium leading-none">Resumo</span>
+            </button>
+            <button onclick="mudarAba('Abastecimentos')" id="btnAbaAbastecimentos" class="flex flex-col items-center justify-center text-gray-400 hover:text-emerald-400 transition">
+                <i class="fa-solid fa-gas-pump text-lg mb-1"></i>
+                <span class="text-[10px] font-medium leading-none">Postos</span>
+            </button>
+            <button onclick="mudarAba('Manutencoes')" id="btnAbaManutencoes" class="flex flex-col items-center justify-center text-gray-400 hover:text-blue-400 transition">
+                <i class="fa-solid fa-wrench text-lg mb-1"></i>
+                <span class="text-[10px] font-medium leading-none">Oficina</span>
+            </button>
+            <button onclick="mudarAba('Avisos')" id="btnAbaAvisos" class="flex flex-col items-center justify-center text-gray-400 hover:text-yellow-400 transition">
+                <i class="fa-solid fa-bell text-lg mb-1"></i>
+                <span class="text-[10px] font-medium leading-none">Avisos</span>
+            </button>
+            <button onclick="mudarAba('Locais')" id="btnAbaLocais" class="flex flex-col items-center justify-center text-gray-400 hover:text-red-400 transition">
+                <i class="fa-solid fa-map-location-dot text-lg mb-1"></i>
+                <span class="text-[10px] font-medium leading-none">Locais</span>
+            </button>
+            <button onclick="mudarAba('Ajustes')" id="btnAbaAjustes" class="flex flex-col items-center justify-center text-gray-400 hover:text-gray-200 transition">
+                <i class="fa-solid fa-gear text-lg mb-1"></i>
+                <span class="text-[10px] font-medium leading-none">Ajustes</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MODAL FORMULÁRIO DINÂMICO -->
+    <div id="modalForm" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+            <h3 id="modalTitulo" class="text-lg font-bold text-white mb-4 flex items-center gap-2"></h3>
+            <div id="modalCorpo" class="space-y-4"></div>
+            <div class="flex justify-end gap-2 mt-6">
+                <button onclick="fecharModal()" class="px-4 py-2 rounded-lg text-sm bg-gray-800 text-gray-300 hover:bg-gray-700 transition">Cancelar</button>
+                <button id="modalBtnSalvar" class="px-4 py-2 rounded-lg text-sm font-bold bg-emerald-500 text-gray-950 hover:bg-emerald-400 transition">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT DA APLICAÇÃO -->
+    <script>
+        const PADRAO_DB = {
+            veiculoAtivoId: 1,
+            veiculos: [
+                { id: 1, nome: "Honda Fit 1.5", tipo: "carro", placa: "ABC-1234", modelo: "EX 2016", odometro: 85400, calibragem: "32 psi" },
+                { id: 2, nome: "Kawasaki Vulcan 650 S", tipo: "moto", placa: "XYZ-9876", modelo: "Custom 2022", odometro: 14200, calibragem: "32 / 36 psi" }
+            ],
+            abastecimentos: [
+                { id: 1, veiculoId: 1, data: "2026-10-01", hora: "08:30", odometro: 84800, litros: 42.0, valorTotal: 245.50, posto: "Posto Shell Faria Lima" }
+            ],
+            manutencoes: [
+                { id: 1, veiculoId: 1, data: "2026-09-15", hora: "10:00", odometro: 84000, oficina: "Oficina Bosch", itens: [{ nome: "Troca de Óleo e Filtro CVT", valor: 380.00 }] }
+            ],
+            avisos: [
+                { id: 1, veiculoId: 1, titulo: "Verificar Calibragem", tipo: "km", limite: 85800, status: "ativo" }
+            ],
+            locais: [
+                { id: 1, nome: "Posto Shell Faria Lima", tipo: "posto" },
+                { id: 2, nome: "Oficina Bosch", tipo: "oficina" }
+            ]
+        };
+
+        let db = JSON.parse(localStorage.getItem('drivestats_db')) || PADRAO_DB;
+        let fileHandle = null; 
+        let chartInstance = null;
+
+        if (!db.veiculos || !Array.isArray(db.veiculos) || db.veiculos.length === 0) {
+            db = PADRAO_DB;
+            localStorage.setItem('drivestats_db', JSON.stringify(db));
+        }
+
+        if (!db.locais) {
+            db.locais = [];
+        }
+
+        async function tentarRestaurarHandle() {
+            const storedHandle = await window.idbKeyval?.get('drivestats_file_handle');
+            if (storedHandle) {
+                try {
+                    if ((await storedHandle.queryPermission({ mode: 'readwrite' })) === 'granted') {
+                        fileHandle = storedHandle;
+                        const file = await fileHandle.getFile();
+                        const text = await file.text();
+                        if (text.trim()) {
+                            try {
+                                const dadosImportados = JSON.parse(text);
+                                if (dadosImportados.veiculos && Array.isArray(dadosImportados.veiculos)) {
+                                    db = dadosImportados;
+                                    if (!db.locais) db.locais = [];
+                                    localStorage.setItem('drivestats_db', JSON.stringify(db));
+                                }
+                            } catch (e) {}
+                        }
+                        atualizarStatusTxtUI(file.name);
+                        inicializarApp();
+                        return;
+                    }
+                } catch (e) {
+                    console.log("Permissão de arquivo pendente ou expirada.");
+                }
+            }
+            
+            // Se não encontrou permissão prévia, abre o pop-up de destaque obrigatório
+            abrirModalBackupObrigatorio();
+        }
+
+        function abrirModalBackupObrigatorio() {
+            document.getElementById('modalBackupObrigatorio').classList.remove('hidden');
+        }
+
+        function fecharModalBackupObrigatorio() {
+            document.getElementById('modalBackupObrigatorio').classList.add('hidden');
+            inicializarApp();
+        }
+
+        async function salvarDB() {
+            localStorage.setItem('drivestats_db', JSON.stringify(db));
+            
+            if (fileHandle) {
+                try {
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(JSON.stringify(db, null, 2));
+                    await writable.close();
+                    console.log("Arquivo TXT sincronizado instantaneamente no disco.");
+                } catch (err) {
+                    console.error("Erro ao gravar automaticamente no arquivo TXT:", err);
+                    desvincularArquivo();
+                }
+            }
+        }
+
+        async function vincularArquivoTXT(veioDoModal = false) {
+            if ('showOpenFilePicker' in window) {
+                try {
+                    const [handle] = await window.showOpenFilePicker({
+                        types: [{
+                            description: 'Arquivo de Texto ou JSON',
+                            accept: { 'text/plain': ['.txt', '.json'] }
+                        }],
+                        multiple: false
+                    });
+                    
+                    fileHandle = handle;
+                    
+                    if (!window.idbKeyval) {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.min.js';
+                        script.onload = () => window.idbKeyval.set('drivestats_file_handle', fileHandle);
+                        document.head.appendChild(script);
+                    } else {
+                        window.idbKeyval.set('drivestats_file_handle', fileHandle);
+                    }
+
+                    const file = await fileHandle.getFile();
+                    const text = await file.text();
+                    
+                    if (text.trim()) {
+                        try {
+                            const dadosImportados = JSON.parse(text);
+                            if (dadosImportados.veiculos && Array.isArray(dadosImportados.veiculos)) {
+                                db = dadosImportados;
+                                if (!db.locais) db.locais = [];
+                                localStorage.setItem('drivestats_db', JSON.stringify(db));
+                            }
+                        } catch (e) {
+                            console.warn("Arquivo vazio ou formato inicial diferente, mantendo base atual.");
+                        }
+                    }
+                    
+                    atualizarStatusTxtUI(file.name);
+                    document.getElementById('modalBackupObrigatorio').classList.add('hidden');
+                    inicializarApp();
+                    alert(`Arquivo "${file.name}" vinculado com sucesso! Sincronização em tempo real ativada.`);
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        if (!veioDoModal) alert("Não foi possível acessar o arquivo selecionado.");
+                    } else {
+                        if (!fileHandle) inicializarApp();
+                    }
+                }
+            } else {
+                alert("O seu navegador não suporta a gravação direta em arquivos locais. Utilize o Google Chrome ou Microsoft Edge.");
+                inicializarApp();
+            }
+        }
+
+        async function sairESalvarTXT() {
+            if (fileHandle) {
+                try {
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(JSON.stringify(db, null, 2));
+                    await writable.close();
+                    const file = await fileHandle.getFile();
+                    alert(`Dados salvos e sincronizados com sucesso no arquivo "${file.name}"! Vínculo encerrado.`);
+                } catch (err) {
+                    alert("Erro ao salvar final no arquivo.");
+                }
+            }
+            if (window.idbKeyval) window.idbKeyval.del('drivestats_file_handle');
+            desvincularArquivo();
+        }
+
+        function desvincularArquivo() {
+            fileHandle = null;
+            atualizarStatusTxtUI();
+        }
+
+        function atualizarStatusTxtUI(nomeArquivo = null) {
+            const dot = document.getElementById('statusTxtDot');
+            const texto = document.getElementById('statusTxtTexto');
+            const btnSairHeader = document.getElementById('btnSairSalvarHeader');
+            const btnVincular = document.getElementById('btnVincularTxt');
+
+            if (fileHandle && nomeArquivo) {
+                dot.className = "w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50";
+                texto.textContent = `Sincronizado com: ${nomeArquivo}`;
+                btnSairHeader.classList.remove('hidden');
+                btnSairHeader.classList.add('flex');
+                if (btnVincular) btnVincular.classList.add('opacity-50');
+            } else {
+                dot.className = "w-3 h-3 rounded-full bg-yellow-500 animate-pulse";
+                texto.textContent = "Modo Local (Não Sincronizado)";
+                btnSairHeader.classList.remove('flex');
+                btnSairHeader.classList.add('hidden');
+                if (btnVincular) btnVincular.classList.remove('opacity-50');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.min.js';
+            script.onload = () => tentarRestaurarHandle();
+            document.head.appendChild(script);
+        });
+
+        function inicializarApp() {
+            if (!db.veiculoAtivoId || !db.veiculos.some(v => v.id === db.veiculoAtivoId)) {
+                db.veiculoAtivoId = db.veiculos[0].id;
+            }
+            atualizarSeletorVeiculos();
+            renderizarApp();
+        }
+
+        function salvarBancoTXT() {
+            const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "drivestats_db.txt");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function triggerImportarExcel() {
+            document.getElementById('inputImportarExcelFile').click();
+        }
+
+        function importarDadosExcelCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const texto = e.target.result;
+                
+                if (file.name.endsWith('.txt') || file.name.endsWith('.json')) {
+                    try {
+                        const dadosImportados = JSON.parse(texto);
+                        if (dadosImportados.veiculos && Array.isArray(dadosImportados.veiculos)) {
+                            db = dadosImportados;
+                            if (!db.locais) db.locais = [];
+                            salvarDB();
+                            inicializarApp();
+                            alert("Banco de dados completo importado com sucesso e sincronizado!");
+                            return;
+                        }
+                    } catch (err) {}
+                }
+
+                const linhas = texto.split(/\r\n|\n/);
+                let importadosCont = 0;
+                let idVeiculoTarget = db.veiculoAtivoId;
+
+                linhas.forEach((linha, idx) => {
+                    if (idx === 0 || !linha.trim()) return;
+                    
+                    const colunas = linha.split(/,|;/);
+                    if (colunas.length >= 4) {
+                        const dataVal = colunas[0]?.trim() || new Date().toISOString().split('T')[0];
+                        const odoVal = parseInt(colunas[1]) || 0;
+                        const litrosVal = parseFloat(colunas[2]) || 0;
+                        const valorVal = parseFloat(colunas[3]) || 0;
+                        const postoVal = colunas[4] ? colunas[4].replace(/"/g, '').trim() : 'Posto Importado';
+
+                        if (litrosVal > 0 || valorVal > 0) {
+                            db.abastecimentos.push({
+                                id: Date.now() + Math.floor(Math.random() * 1000),
+                                veiculoId: idVeiculoTarget,
+                                data: dataVal,
+                                hora: "12:00",
+                                odometro: odoVal,
+                                litros: litrosVal,
+                                valorTotal: valorVal,
+                                posto: postoVal
+                            });
+
+                            if (postoVal && !db.locais.some(l => l.nome.toLowerCase() === postoVal.toLowerCase())) {
+                                db.locais.push({
+                                    id: Date.now() + Math.floor(Math.random() * 10000),
+                                    nome: postoVal,
+                                    tipo: 'posto'
+                                });
+                            }
+
+                            importadosCont++;
+                        }
+                    }
+                });
+
+                if (importadosCont > 0) {
+                    salvarDB();
+                    renderizarApp();
+                    alert(`${importadosCont} registro(s) importado(s) e sincronizados com sucesso!`);
+                } else {
+                    alert("Não foi possível processar o arquivo.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportarTodosVeiculosExcel() {
+            let htmlTable = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+            htmlTable += '<head><meta charset="UTF-8"></head><body>';
+            htmlTable += '<h1>Relatório Geral de Frota - DriveStats</h1>';
+
+            db.veiculos.forEach(veiculo => {
+                const abasts = db.abastecimentos.filter(a => a.veiculoId === veiculo.id);
+                const manuts = db.manutencoes.filter(m => m.veiculoId === veiculo.id);
+                const avisos = db.avisos.filter(av => av.veiculoId === veiculo.id);
+
+                htmlTable += '<hr><br>';
+                htmlTable += '<h2>VEÍCULO: ' + veiculo.nome + ' (' + veiculo.placa + ')</h2>';
+                htmlTable += '<table border="1" style="background-color: #f3f4f6;">';
+                htmlTable += '<tr><th>Nome</th><th>Tipo</th><th>Placa</th><th>Modelo</th><th>Odômetro Atual (km)</th><th>Calibragem</th></tr>';
+                htmlTable += '<tr><td>' + veiculo.nome + '</td><td>' + veiculo.tipo + '</td><td>' + veiculo.placa + '</td><td>' + veiculo.modelo + '</td><td>' + veiculo.odometro + '</td><td>' + (veiculo.calibragem || '') + '</td></tr>';
+                htmlTable += '</table><br>';
+
+                htmlTable += '<h4>Abastecimentos (' + veiculo.nome + ')</h4>';
+                htmlTable += '<table border="1">';
+                htmlTable += '<tr><th>Data</th><th>Hora</th><th>Odômetro (km)</th><th>Litros</th><th>Valor Total (R$)</th><th>Posto</th></tr>';
+                
+                if(abasts.length === 0) {
+                    htmlTable += '<tr><td colspan="6">Nenhum abastecimento registrado.</td></tr>';
+                } else {
+                    abasts.forEach(a => {
+                        htmlTable += '<tr><td>' + a.data + '</td><td>' + a.hora + '</td><td>' + a.odometro + '</td><td>' + a.litros + '</td><td>' + a.valorTotal + '</td><td>' + (a.posto || '') + '</td></tr>';
+                    });
+                }
+                htmlTable += '</table><br>';
+
+                htmlTable += '<h4>Manutenções (' + veiculo.nome + ')</h4>';
+                htmlTable += '<table border="1">';
+                htmlTable += '<tr><th>Data</th><th>Odômetro (km)</th><th>Oficina</th><th>Serviços / Peças</th><th>Valor Total (R$)</th></tr>';
+                
+                if(manuts.length === 0) {
+                    htmlTable += '<tr><td colspan="5">Nenhuma manutenção registrada.</td></tr>';
+                } else {
+                    manuts.forEach(m => {
+                        let totalM = m.itens.reduce((acc, i) => acc + i.valor, 0);
+                        let itensStr = m.itens.map(i => i.nome + ' (R$ ' + i.valor.toFixed(2) + ')').join('; ');
+                        htmlTable += '<tr><td>' + m.data + '</td><td>' + m.odometro + '</td><td>' + m.oficina + '</td><td>' + itensStr + '</td><td>' + totalM + '</td></tr>';
+                    });
+                }
+                htmlTable += '</table><br>';
+
+                htmlTable += '<h4>Avisos & Preventivas (' + veiculo.nome + ')</h4>';
+                htmlTable += '<table border="1">';
+                htmlTable += '<tr><th>Título do Aviso</th><th>Quilometragem Limite (km)</th><th>Status</th></tr>';
+                
+                if(avisos.length === 0) {
+                    htmlTable += '<tr><td colspan="3">Nenhum aviso registrado.</td></tr>';
+                } else {
+                    avisos.forEach(av => {
+                        htmlTable += '<tr><td>' + av.titulo + '</td><td>' + av.limite + '</td><td>' + av.status + '</td></tr>';
+                    });
+                }
+                htmlTable += '</table><br><br>';
+            });
+
+            htmlTable += '<hr><br><h2>Locais Cadastrados (Postos e Oficinas)</h2>';
+            htmlTable += '<table border="1">';
+            htmlTable += '<tr><th>Nome do Local</th><th>Tipo</th></tr>';
+            if (db.locais.length === 0) {
+                htmlTable += '<tr><td colspan="2">Nenhum local cadastrado.</td></tr>';
+            } else {
+                db.locais.forEach(l => {
+                    htmlTable += '<tr><td>' + l.nome + '</td><td>' + l.tipo.toUpperCase() + '</td></tr>';
+                });
+            }
+            htmlTable += '</table>';
+
+            htmlTable += '</body></html>';
+
+            const blob = new Blob([htmlTable], { type: 'application/vnd.ms-excel' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'drivestats_frota_completa.xls';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        function exportarCSV() {
+            const veiculo = db.veiculos.find(v => v.id === db.veiculoAtivoId) || db.veiculos[0];
+            const abasts = db.abastecimentos.filter(a => a.veiculoId === veiculo.id);
+            
+            let csvContent = "data:text/csv;charset=utf-8,ID,Data,Hora,Odometro(km),Litros,ValorTotal(R$),Posto\r\n";
+            abasts.forEach(a => {
+                csvContent += a.id + "," + a.data + "," + a.hora + "," + a.odometro + "," + a.litros + "," + a.valorTotal + ",\"" + (a.posto || '') + "\"\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "drivestats_" + veiculo.nome.replace(/\s+/g, '_') + "_abastecimentos.csv");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        function exportarExcelCompleto() {
+            const veiculo = db.veiculos.find(v => v.id === db.veiculoAtivoId) || db.veiculos[0];
+            const abasts = db.abastecimentos.filter(a => a.veiculoId === veiculo.id);
+            const manuts = db.manutencoes.filter(m => m.veiculoId === veiculo.id);
+            const avisos = db.avisos.filter(av => av.veiculoId === veiculo.id);
+
+            let htmlTable = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+            htmlTable += '<head><meta charset="UTF-8"></head><body>';
+            htmlTable += '<h2>Relatório Completo: ' + veiculo.nome + '</h2>';
+            htmlTable += '<h3>1. Dados do Veículo</h3>';
+            htmlTable += '<table border="1">';
+            htmlTable += '<tr><th>Nome</th><th>Tipo</th><th>Placa</th><th>Modelo</th><th>Odômetro Atual (km)</th><th>Calibragem</th></tr>';
+            htmlTable += '<tr><td>' + veiculo.nome + '</td><td>' + veiculo.tipo + '</td><td>' + veiculo.placa + '</td><td>' + veiculo.modelo + '</td><td>' + veiculo.odometro + '</td><td>' + (veiculo.calibragem || '') + '</td></tr>';
+            htmlTable += '</table><br>';
+
+            htmlTable += '<h3>2. Histórico de Abastecimentos</h3>';
+            htmlTable += '<table border="1">';
+            htmlTable += '<tr><th>Data</th><th>Hora</th><th>Odômetro (km)</th><th>Litros</th><th>Valor Total (R$)</th><th>Posto</th></tr>';
+            
+            abasts.forEach(a => {
+                htmlTable += '<tr><td>' + a.data + '</td><td>' + a.hora + '</td><td>' + a.odometro + '</td><td>' + a.litros + '</td><td>' + a.valorTotal + '</td><td>' + (a.posto || '') + '</td></tr>';
+            });
+            htmlTable += '</table><br>';
+
+            htmlTable += '<h3>3. Histórico de Manutenções</h3>';
+            htmlTable += '<table border="1">';
+            htmlTable += '<tr><th>Data</th><th>Odômetro (km)</th><th>Oficina</th><th>Serviços / Peças</th><th>Valor Total (R$)</th></tr>';
+            
+            manuts.forEach(m => {
+                let totalM = m.itens.reduce((acc, i) => acc + i.valor, 0);
+                let itensStr = m.itens.map(i => i.nome + ' (R$ ' + i.valor.toFixed(2) + ')').join('; ');
+                htmlTable += '<tr><td>' + m.data + '</td><td>' + m.odometro + '</td><td>' + m.oficina + '</td><td>' + itensStr + '</td><td>' + totalM + '</td></tr>';
+            });
+            htmlTable += '</table><br>';
+
+            htmlTable += '<h3>4. Avisos & Preventivas</h3>';
+            htmlTable += '<table border="1">';
+            htmlTable += '<tr><th>Título do Aviso</th><th>Quilometragem Limite (km)</th><th>Status</th></tr>';
+            
+            avisos.forEach(av => {
+                htmlTable += '<tr><td>' + av.titulo + '</td><td>' + av.limite + '</td><td>' + av.status + '</td></tr>';
+            });
+            htmlTable += '</table></body></html>';
+
+            const blob = new Blob([htmlTable], { type: 'application/vnd.ms-excel' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'drivestats_' + veiculo.nome.replace(/\s+/g, '_') + '_completo.xls';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        function mudarAba(abaNome) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('aba' + abaNome).classList.remove('hidden');
+
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.className = "flex flex-col items-center justify-center text-gray-400 hover:text-emerald-400 transition";
+            });
+            const btnAtivo = document.getElementById('btnAba' + abaNome);
+            if(btnAtivo) btnAtivo.className = "flex flex-col items-center justify-center text-emerald-400 transition";
+
+            if(abaNome === 'VisaoGeral') renderizarGrafico();
+            if(abaNome === 'Ajustes') renderizarAbaAjustes();
+        }
+
+        function atualizarSeletorVeiculos() {
+            const select = document.getElementById('selectVeiculoHeader');
+            if(!select) return;
+            select.innerHTML = '';
+            
+            db.veiculos.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.textContent = v.nome + ' (' + v.placa + ')';
+                if(v.id === db.veiculoAtivoId) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        function mudarVeiculoAtivo(id) {
+            db.veiculoAtivoId = parseInt(id);
+            salvarDB();
+            renderizarApp();
+        }
+
+        function renderizarAbaAjustes() {
+            const container = document.getElementById('listaGerenciarVeiculos');
+            if(!container) return;
+            container.innerHTML = '';
+
+            db.veiculos.forEach(v => {
+                const icone = v.tipo === 'moto' ? 'fa-motorcycle' : 'fa-car';
+                const eAtivo = v.id === db.veiculoAtivoId;
+                
+                container.innerHTML += `
+                    <div class="bg-gray-800/80 border ${eAtivo ? 'border-emerald-500/80' : 'border-gray-700'} p-3 rounded-xl flex justify-between items-center text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="text-emerald-400 text-sm"><i class="fa-solid ${icone}"></i></span>
+                            <div>
+                                <p class="font-bold text-white flex items-center gap-2">
+                                    ${v.nome} 
+                                    ${eAtivo ? '<span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/30">Ativo</span>' : ''}
+                                </p>
+                                <p class="text-gray-400">${v.modelo} • ${v.placa} • ${v.odometro.toLocaleString()} km</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-1">
+                            <button onclick="abrirModalVeiculo(${v.id})" class="bg-gray-700 hover:bg-emerald-600/30 hover:text-emerald-400 text-gray-200 px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1" title="Editar Veículo">
+                                <i class="fa-solid fa-pen"></i> Editar
+                            </button>
+                            <button onclick="excluirVeiculo(${v.id})" class="bg-gray-700 hover:bg-red-600/30 text-red-400 px-2.5 py-1.5 rounded-lg font-medium transition" title="Excluir Veículo">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function excluirVeiculo(id) {
+            if (db.veiculos.length <= 1) {
+                alert("Você precisa manter pelo menos um veículo cadastrado.");
+                return;
+            }
+
+            const veiculo = db.veiculos.find(v => v.id === id);
+            if (confirm("Deseja realmente excluir o veículo \"" + veiculo.nome + "\" e todos os registros associados a ele?")) {
+                db.veiculos = db.veiculos.filter(v => v.id !== id);
+                db.abastecimentos = db.abastecimentos.filter(a => a.veiculoId !== id);
+                db.manutencoes = db.manutencoes.filter(m => m.veiculoId !== id);
+                db.avisos = db.avisos.filter(av => av.veiculoId !== id);
+
+                if (db.veiculoAtivoId === id) {
+                    db.veiculoAtivoId = db.veiculos[0].id;
+                }
+
+                salvarDB();
+                inicializarApp();
+                renderizarAbaAjustes();
+            }
+        }
+
+        function renderizarApp() {
+            const veiculo = db.veiculos.find(v => v.id === db.veiculoAtivoId) || db.veiculos[0];
+            if (!veiculo) return;
+
+            const iconeTipo = veiculo.tipo === 'moto' ? 'fa-motorcycle' : 'fa-car';
+            
+            const banner = document.getElementById('bannerVeiculoAtivo');
+            if(banner) {
+                banner.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full"><i class="fa-solid ${iconeTipo}"></i> ${veiculo.tipo}</span>
+                            <h2 class="text-lg font-extrabold text-white mt-1">${veiculo.nome}</h2>
+                            <p class="text-xs text-gray-400">${veiculo.modelo} • Placa: <span class="text-gray-200 font-mono">${veiculo.placa}</span></p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-400 block">Calibragem</span>
+                            <span class="text-sm font-bold text-emerald-400"><i class="fa-solid fa-gauge"></i> ${veiculo.calibragem || 'N/D'}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const abasts = db.abastecimentos.filter(a => a.veiculoId === veiculo.id).sort((a,b) => a.odometro - b.odometro);
+            const manuts = db.manutencoes.filter(m => m.veiculoId === veiculo.id);
+            const avisos = db.avisos.filter(av => av.veiculoId === veiculo.id && av.status === 'ativo');
+
+            let gastoTotal = abasts.reduce((acc, item) => acc + item.valorTotal, 0);
+            manuts.forEach(m => m.itens.forEach(i => gastoTotal += i.valor));
+
+            document.getElementById('statOdometro').textContent = veiculo.odometro.toLocaleString() + ' km';
+            document.getElementById('statGastoTotal').textContent = 'R$ ' + gastoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('statQtdAlertas').textContent = avisos.length;
+
+            let mediaConsumo = 0;
+            if (abasts.length > 1) {
+                let kmRodados = abasts[abasts.length - 1].odometro - abasts[0].odometro;
+                let litrosTotais = abasts.slice(1).reduce((acc, curr) => acc + curr.litros, 0);
+                if(litrosTotais > 0) mediaConsumo = kmRodados / litrosTotais;
+            }
+            document.getElementById('statMediaConsumo').textContent = mediaConsumo.toFixed(1) + ' km/L';
+
+            renderizarListas(abasts, manuts, avisos);
+            renderizarGrafico();
+            renderizarAbaAjustes();
+        }
+
+        function renderizarListas(abasts, manuts, avisos) {
+            const divAbast = document.getElementById('listaAbastecimentos');
+            if (divAbast) {
+                divAbast.innerHTML = abasts.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhum abastecimento registrado.</p>';
+                abasts.slice().reverse().forEach(a => {
+                    divAbast.innerHTML += `
+                        <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
+                            <div>
+                                <p class="font-bold text-white"><i class="fa-solid fa-gas-pump text-emerald-400 mr-1"></i> ${a.litros} L - R$ ${a.valorTotal.toFixed(2)}</p>
+                                <p class="text-gray-400">${a.data} às ${a.hora} • ${a.odometro} km • ${a.posto || 'Posto não informado'}</p>
+                            </div>
+                            <div class="flex gap-1">
+                                <button onclick="abrirModalAbastecimento(${a.id})" class="text-gray-400 hover:text-emerald-400 p-2"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="excluirRegistro('abastecimentos', ${a.id})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            const divManut = document.getElementById('listaManutencoes');
+            if (divManut) {
+                divManut.innerHTML = manuts.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhuma manutenção registrada.</p>';
+                manuts.slice().reverse().forEach(m => {
+                    let totalM = m.itens.reduce((acc, i) => acc + i.valor, 0);
+                    let itensStr = m.itens.map(i => i.nome + ' (R$ ' + i.valor.toFixed(2) + ')').join(', ');
+                    divManut.innerHTML += `
+                        <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
+                            <div>
+                                <p class="font-bold text-white"><i class="fa-solid fa-wrench text-blue-400 mr-1"></i> ${m.oficina} - R$ ${totalM.toFixed(2)}</p>
+                                <p class="text-gray-400">${m.data} • ${m.odometro} km • ${itensStr}</p>
+                            </div>
+                            <div class="flex gap-1">
+                                <button onclick="abrirModalManutencao(${m.id})" class="text-gray-400 hover:text-blue-400 p-2"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="excluirRegistro('manutencoes', ${m.id})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            const divAvisos = document.getElementById('listaAvisos');
+            if (divAvisos) {
+                divAvisos.innerHTML = avisos.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhum aviso ativo.</p>';
+                avisos.forEach(av => {
+                    divAvisos.innerHTML += `
+                        <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
+                            <div>
+                                <p class="font-bold text-yellow-400"><i class="fa-solid fa-bell mr-1"></i> ${av.titulo}</p>
+                                <p class="text-gray-400">Limite: ${av.limite} km</p>
+                            </div>
+                            <div class="flex gap-1">
+                                <button onclick="abrirModalAviso(${av.id})" class="text-gray-400 hover:text-yellow-400 p-2"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="excluirRegistro('avisos', ${av.id})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            const divLocais = document.getElementById('listaLocais');
+            if (divLocais) {
+                divLocais.innerHTML = db.locais.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhum local cadastrado.</p>';
+                db.locais.forEach(l => {
+                    divLocais.innerHTML += `
+                        <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
+                            <div>
+                                <p class="font-bold text-white"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i> ${l.nome}</p>
+                                <p class="text-gray-400 uppercase">Tipo: ${l.tipo}</p>
+                            </div>
+                            <div class="flex gap-1">
+                                <button onclick="abrirModalLocal(${l.id})" class="text-gray-400 hover:text-red-400 p-2"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="excluirRegistro('locais', ${l.id})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function renderizarGrafico() {
+            const ctx = document.getElementById('graficoConsumo');
+            if (!ctx) return;
+            const abasts = db.abastecimentos.filter(a => a.veiculoId === db.veiculoAtivoId);
+            
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: abasts.map(a => a.data),
+                    datasets: [{
+                        label: 'Litros Abastecidos',
+                        data: abasts.map(a => a.litros),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#1f2937' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+                        y: { grid: { color: '#1f2937' }, ticks: { color: '#9ca3af', font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function excluirRegistro(colecao, id) {
+            if(confirm("Deseja realmente excluir este item?")) {
+                db[colecao] = db[colecao].filter(item => item.id !== id);
+                salvarDB();
+                renderizarApp();
+            }
+        }
+
+        // MODAIS DE EDIÇÃO & CRIAÇÃO
+        function fecharModal() {
+            document.getElementById('modalForm').classList.add('hidden');
+        }
+
+        function abrirModalVeiculo(id = null) {
+            const item = id ? db.veiculos.find(v => v.id === id) : { nome: '', tipo: 'carro', placa: '', modelo: '', odometro: 0, calibragem: '32 psi' };
+            
+            document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-emerald-400"></i> Editar Veículo' : '<i class="fa-solid fa-car text-emerald-400"></i> Novo Veículo';
+            document.getElementById('modalCorpo').innerHTML = `
+                <div><label class="text-xs text-gray-400">Nome do Veículo</label><input id="inpNome" value="${item.nome}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="text-xs text-gray-400">Tipo</label>
+                        <select id="inpTipo" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                            <option value="carro" ${item.tipo === 'carro' ? 'selected' : ''}>Carro</option>
+                            <option value="moto" ${item.tipo === 'moto' ? 'selected' : ''}>Moto</option>
+                        </select>
+                    </div>
+                    <div><label class="text-xs text-gray-400">Placa</label><input id="inpPlaca" value="${item.placa}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="text-xs text-gray-400">Modelo/Ano</label><input id="inpModelo" value="${item.modelo}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Odômetro (km)</label><input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                </div>
+                <div><label class="text-xs text-gray-400">Calibragem Recomendada</label><input id="inpCalibragem" value="${item.calibragem}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+            `;
+
+            document.getElementById('modalBtnSalvar').onclick = () => {
+                const novoObjeto = {
+                    id: id || Date.now(),
+                    nome: document.getElementById('inpNome').value,
+                    tipo: document.getElementById('inpTipo').value,
+                    placa: document.getElementById('inpPlaca').value,
+                    modelo: document.getElementById('inpModelo').value,
+                    odometro: parseInt(document.getElementById('inpOdometro').value) || 0,
+                    calibragem: document.getElementById('inpCalibragem').value
+                };
+
+                if (id) {
+                    const idx = db.veiculos.findIndex(v => v.id === id);
+                    db.veiculos[idx] = novoObjeto;
+                } else {
+                    db.veiculos.push(novoObjeto);
+                    db.veiculoAtivoId = novoObjeto.id;
+                }
+                salvarDB();
+                fecharModal();
+                inicializarApp();
+            };
+
+            document.getElementById('modalForm').classList.remove('hidden');
+        }
+
+        function abrirModalAbastecimento(id = null) {
+            const item = id ? db.abastecimentos.find(a => a.id === id) : { 
+                litros: 40, valorTotal: 200, odometro: 0, 
+                data: new Date().toISOString().split('T')[0], 
+                hora: new Date().toLocaleTimeString().slice(0,5), 
+                posto: '' 
+            };
+
+            document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-emerald-400"></i> Editar Abastecimento' : '<i class="fa-solid fa-gas-pump text-emerald-400"></i> Novo Abastecimento';
+            document.getElementById('modalCorpo').innerHTML = `
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="text-xs text-gray-400">Litros</label><input id="inpLitros" type="number" step="0.1" value="${item.litros}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Valor Total (R$)</label><input id="inpValor" type="number" step="0.01" value="${item.valorTotal}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                </div>
+                <div><label class="text-xs text-gray-400">Odômetro Atual (km)</label><input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${item.data}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Hora</label><input id="inpHora" type="time" value="${item.hora}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                </div>
+                <div><label class="text-xs text-gray-400">Posto</label><input id="inpPosto" value="${item.posto}" placeholder="Ex: Posto Shell" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+            `;
+
+            document.getElementById('modalBtnSalvar').onclick = () => {
+                const novoOdometro = parseInt(document.getElementById('inpOdometro').value) || 0;
+                const nomePosto = document.getElementById('inpPosto').value;
+                const novoObjeto = {
+                    id: id || Date.now(),
+                    veiculoId: db.veiculoAtivoId,
+                    litros: parseFloat(document.getElementById('inpLitros').value) || 0,
+                    valorTotal: parseFloat(document.getElementById('inpValor').value) || 0,
+                    odometro: novoOdometro,
+                    data: document.getElementById('inpData').value,
+                    hora: document.getElementById('inpHora').value,
+                    posto: nomePosto
+                };
+
+                if (id) {
+                    const idx = db.abastecimentos.findIndex(a => a.id === id);
+                    db.abastecimentos[idx] = novoObjeto;
+                } else {
+                    db.abastecimentos.push(novoObjeto);
+                }
+
+                if (nomePosto && !db.locais.some(l => l.nome.toLowerCase() === nomePosto.toLowerCase())) {
+                    db.locais.push({
+                        id: Date.now() + Math.floor(Math.random() * 10000),
+                        nome: nomePosto,
+                        tipo: 'posto'
+                    });
+                }
+
+                const v = db.veiculos.find(ve => ve.id === db.veiculoAtivoId);
+                if (v && novoOdometro > v.odometro) v.odometro = novoOdometro;
+
+                salvarDB();
+                fecharModal();
+                renderizarApp();
+            };
+
+            document.getElementById('modalForm').classList.remove('hidden');
+        }
+
+        function abrirModalManutencao(id = null) {
+            const item = id ? db.manutencoes.find(m => m.id === id) : { 
+                oficina: '', odometro: 0, 
+                data: new Date().toISOString().split('T')[0], 
+                itens: [{ nome: '', valor: 0 }] 
+            };
+
+            document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-blue-400"></i> Editar Manutenção' : '<i class="fa-solid fa-wrench text-blue-400"></i> Nova Manutenção';
+            document.getElementById('modalCorpo').innerHTML = `
+                <div><label class="text-xs text-gray-400">Oficina / Estabelecimento</label><input id="inpOficina" value="${item.oficina}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="text-xs text-gray-400">Odômetro (km)</label><input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${item.data}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                </div>
+                <div><label class="text-xs text-gray-400">Serviço / Peça Realizada</label><input id="inpServico" value="${item.itens[0]?.nome || ''}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div><label class="text-xs text-gray-400">Valor do Serviço (R$)</label><input id="inpValor" type="number" step="0.01" value="${item.itens[0]?.valor || 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+            `;
+
+            document.getElementById('modalBtnSalvar').onclick = () => {
+                const nomeOficina = document.getElementById('inpOficina').value;
+                const novoObjeto = {
+                    id: id || Date.now(),
+                    veiculoId: db.veiculoAtivoId,
+                    oficina: nomeOficina,
+                    odometro: parseInt(document.getElementById('inpOdometro').value) || 0,
+                    data: document.getElementById('inpData').value,
+                    itens: [{
+                        nome: document.getElementById('inpServico').value,
+                        valor: parseFloat(document.getElementById('inpValor').value) || 0
+                    }]
+                };
+
+                if (id) {
+                    const idx = db.manutencoes.findIndex(m => m.id === id);
+                    db.manutencoes[idx] = novoObjeto;
+                } else {
+                    db.manutencoes.push(novoObjeto);
+                }
+
+                if (nomeOficina && !db.locais.some(l => l.nome.toLowerCase() === nomeOficina.toLowerCase())) {
+                    db.locais.push({
+                        id: Date.now() + Math.floor(Math.random() * 10000),
+                        nome: nomeOficina,
+                        tipo: 'oficina'
+                    });
+                }
+
+                salvarDB();
+                fecharModal();
+                renderizarApp();
+            };
+
+            document.getElementById('modalForm').classList.remove('hidden');
+        }
+
+        function abrirModalAviso(id = null) {
+            const item = id ? db.avisos.find(a => a.id === id) : { titulo: '', limite: 0, status: 'ativo' };
+
+            document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-yellow-400"></i> Editar Aviso' : '<i class="fa-solid fa-bell text-yellow-400"></i> Novo Aviso';
+            document.getElementById('modalCorpo').innerHTML = `
+                <div><label class="text-xs text-gray-400">Título do Aviso</label><input id="inpTitulo" value="${item.titulo}" placeholder="Ex: Troca de óleo, Calibragem..." class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div><label class="text-xs text-gray-400">Quilometragem Limite (km)</label><input id="inpLimite" type="number" value="${item.limite}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+            `;
+
+            document.getElementById('modalBtnSalvar').onclick = () => {
+                const novoObjeto = {
+                    id: id || Date.now(),
+                    veiculoId: db.veiculoAtivoId,
+                    titulo: document.getElementById('inpTitulo').value,
+                    limite: parseInt(document.getElementById('inpLimite').value) || 0,
+                    tipo: 'km',
+                    status: 'ativo'
+                };
+
+                if (id) {
+                    const idx = db.avisos.findIndex(a => a.id === id);
+                    db.avisos[idx] = novoObjeto;
+                } else {
+                    db.avisos.push(novoObjeto);
+                }
+
+                salvarDB();
+                fecharModal();
+                renderizarApp();
+            };
+
+            document.getElementById('modalForm').classList.remove('hidden');
+        }
+
+        function abrirModalLocal(id = null) {
+            const item = id ? db.locais.find(l => l.id === id) : { nome: '', tipo: 'posto' };
+
+            document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-red-400"></i> Editar Local' : '<i class="fa-solid fa-location-dot text-red-400"></i> Novo Local';
+            document.getElementById('modalCorpo').innerHTML = `
+                <div><label class="text-xs text-gray-400">Nome do Local</label><input id="inpNome" value="${item.nome}" placeholder="Ex: Posto Shell, Oficina Bosch" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div><label class="text-xs text-gray-400">Tipo</label>
+                    <select id="inpTipo" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                        <option value="posto" ${item.tipo === 'posto' ? 'selected' : ''}>Posto de Combustível</option>
+                        <option value="oficina" ${item.tipo === 'oficina' ? 'selected' : ''}>Oficina / Concessionária</option>
+                    </select>
+                </div>
+            `;
+
+            document.getElementById('modalBtnSalvar').onclick = () => {
+                const novoObjeto = {
+                    id: id || Date.now(),
+                    nome: document.getElementById('inpNome').value,
+                    tipo: document.getElementById('inpTipo').value
+                };
+
+                if (id) {
+                    const idx = db.locais.findIndex(l => l.id === id);
+                    db.locais[idx] = novoObjeto;
+                } else {
+                    db.locais.push(novoObjeto);
+                }
+
+                salvarDB();
+                fecharModal();
+                renderizarApp();
+            };
+
+            document.getElementById('modalForm').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
