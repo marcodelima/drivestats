@@ -230,7 +230,7 @@
 
     <!-- POP-UP DE DESTAQUE PARA BUSCAR O ARQUIVO DE BACKUP -->
     <div id="modalBackupObrigatorio" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-900 border-2 border-emerald-500/80 rounded-2xl w-full max-w-md p-6 shadow-2xl text-center space-y-4 animate-bounce-subtle">
+        <div class="bg-gray-900 border-2 border-emerald-500/80 rounded-2xl w-full max-w-md p-6 shadow-2xl text-center space-y-4">
             <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-3xl shadow-lg shadow-emerald-500/20">
                 <i class="fa-solid fa-folder-open animate-pulse"></i>
             </div>
@@ -308,7 +308,8 @@
                 { id: 1, veiculoId: 1, data: "2026-09-15", hora: "10:00", odometro: 84000, oficina: "Oficina Bosch", itens: [{ nome: "Troca de Óleo e Filtro CVT", valor: 380.00 }] }
             ],
             avisos: [
-                { id: 1, veiculoId: 1, titulo: "Verificar Calibragem", tipo: "km", limite: 85800, status: "ativo" }
+                { id: 1, veiculoId: 1, titulo: "Verificar Calibragem", tipo: "km", limite: 85800, status: "ativo" },
+                { id: 2, veiculoId: 1, titulo: "IPVA 2026", tipo: "data", limiteData: "2026-11-15", recorrencia: "anual", status: "ativo" }
             ],
             locais: [
                 { id: 1, nome: "Posto Shell Faria Lima", tipo: "posto" },
@@ -331,7 +332,11 @@
         }
 
         async function tentarRestaurarHandle() {
-            const storedHandle = await window.idbKeyval?.get('drivestats_file_handle');
+            if (!window.idbKeyval) {
+                abrirModalBackupObrigatorio();
+                return;
+            }
+            const storedHandle = await window.idbKeyval.get('drivestats_file_handle');
             if (storedHandle) {
                 try {
                     if ((await storedHandle.queryPermission({ mode: 'readwrite' })) === 'granted') {
@@ -362,11 +367,11 @@
 
         function abrirModalBackupObrigatorio() {
             document.getElementById('modalBackupObrigatorio').classList.remove('hidden');
+            inicializarApp();
         }
 
         function fecharModalBackupObrigatorio() {
             document.getElementById('modalBackupObrigatorio').classList.add('hidden');
-            inicializarApp();
         }
 
         async function salvarDB() {
@@ -631,13 +636,14 @@
 
                 htmlTable += '<h4>Avisos & Preventivas (' + veiculo.nome + ')</h4>';
                 htmlTable += '<table border="1">';
-                htmlTable += '<tr><th>Título do Aviso</th><th>Quilometragem Limite (km)</th><th>Status</th></tr>';
+                htmlTable += '<tr><th>Título do Aviso</th><th>Tipo</th><th>Limite (km ou Data)</th><th>Recorrência</th><th>Status</th></tr>';
                 
                 if(avisos.length === 0) {
-                    htmlTable += '<tr><td colspan="3">Nenhum aviso registrado.</td></tr>';
+                    htmlTable += '<tr><td colspan="5">Nenhum aviso registrado.</td></tr>';
                 } else {
                     avisos.forEach(av => {
-                        htmlTable += '<tr><td>' + av.titulo + '</td><td>' + av.limite + '</td><td>' + av.status + '</td></tr>';
+                        let valLimite = av.tipo === 'data' ? (av.limiteData || '') : (av.limite + ' km');
+                        htmlTable += '<tr><td>' + av.titulo + '</td><td>' + (av.tipo || 'km') + '</td><td>' + valLimite + '</td><td>' + (av.recorrência || av.recorrencia || 'Nenhuma') + '</td><td>' + av.status + '</td></tr>';
                     });
                 }
                 htmlTable += '</table><br><br>';
@@ -721,10 +727,11 @@
 
             htmlTable += '<h3>4. Avisos & Preventivas</h3>';
             htmlTable += '<table border="1">';
-            htmlTable += '<tr><th>Título do Aviso</th><th>Quilometragem Limite (km)</th><th>Status</th></tr>';
+            htmlTable += '<tr><th>Título do Aviso</th><th>Tipo</th><th>Limite</th><th>Recorrência</th><th>Status</th></tr>';
             
             avisos.forEach(av => {
-                htmlTable += '<tr><td>' + av.titulo + '</td><td>' + av.limite + '</td><td>' + av.status + '</td></tr>';
+                let valLimite = av.tipo === 'data' ? (av.limiteData || '') : (av.limite + ' km');
+                htmlTable += '<tr><td>' + av.titulo + '</td><td>' + (av.tipo || 'km') + '</td><td>' + valLimite + '</td><td>' + (av.recorrencia || 'Nenhuma') + '</td><td>' + av.status + '</td></tr>';
             });
             htmlTable += '</table></body></html>';
 
@@ -883,33 +890,90 @@
             const lista = document.getElementById('listaAlertasDestaque');
             if(!secao || !lista) return;
 
-            // Filtrar avisos vencidos ou próximos (faltando menos de 500 km ou já ultrapassados)
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+
             const urgentes = avisos.filter(av => {
-                let diff = av.limite - odometroAtual;
-                return diff <= 500;
+                if (av.tipo === 'data' && av.limiteData) {
+                    let dLimite = new Date(av.limiteData + 'T00:00:00');
+                    let diffDias = Math.round((dLimite - hoje) / (1000 * 60 * 60 * 24));
+                    return diffDias <= 7;
+                } else {
+                    let diffKm = (av.limite || 0) - odometroAtual;
+                    return diffKm <= 500;
+                }
             });
 
             if (urgentes.length > 0) {
                 secao.classList.remove('hidden');
                 lista.innerHTML = '';
                 urgentes.forEach(av => {
-                    let diff = av.limite - odometroAtual;
-                    let statusTxt = diff < 0 ? `Vencido há ${Math.abs(diff).toLocaleString()} km!` : `Vence em ${diff.toLocaleString()} km!`;
-                    let corBorda = diff < 0 ? 'border-red-500 bg-red-950/40 text-red-300' : 'border-yellow-500 bg-yellow-950/30 text-yellow-300';
+                    let statusTxt = '';
+                    let isVencido = false;
+
+                    if (av.tipo === 'data' && av.limiteData) {
+                        let dLimite = new Date(av.limiteData + 'T00:00:00');
+                        let diffDias = Math.round((dLimite - hoje) / (1000 * 60 * 60 * 24));
+                        if (diffDias < 0) {
+                            statusTxt = `Vencido há ${Math.abs(diffDias)} dia(s)!`;
+                            isVencido = true;
+                        } else if (diffDias === 0) {
+                            statusTxt = `Vence HOJE!`;
+                            isVencido = true;
+                        } else {
+                            statusTxt = `Vence em ${diffDias} dia(s) (${dLimite.toLocaleDateString('pt-BR')})`;
+                        }
+                    } else {
+                        let diffKm = (av.limite || 0) - odometroAtual;
+                        if (diffKm < 0) {
+                            statusTxt = `Vencido há ${Math.abs(diffKm).toLocaleString()} km!`;
+                            isVencido = true;
+                        } else {
+                            statusTxt = `Vence em ${diffKm.toLocaleString()} km!`;
+                        }
+                    }
+
+                    let corBorda = isVencido ? 'border-red-500 bg-red-950/40 text-red-300' : 'border-yellow-500 bg-yellow-950/30 text-yellow-300';
 
                     lista.innerHTML += `
                         <div class="border ${corBorda} p-3 rounded-xl flex justify-between items-center text-xs">
                             <div>
-                                <p class="font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ${av.titulo}</p>
-                                <p class="text-gray-300 mt-0.5">Limite: ${av.limite.toLocaleString()} km • Odômetro Atual: ${odometroAtual.toLocaleString()} km</p>
+                                <p class="font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ${av.titulo} ${av.recorrencia && av.recorrencia !== 'nenhuma' ? `<span class='opacity-70 font-normal'>(${av.recorrencia})</span>` : ''}</p>
+                                <p class="text-gray-300 mt-0.5">Tipo: ${av.tipo === 'data' ? 'Por Data (' + av.limiteData + ')' : 'Por Quilometragem (' + av.limite.toLocaleString() + ' km)'}</p>
                             </div>
-                            <span class="font-extrabold px-2 py-1 rounded bg-black/40 text-[11px]">${statusTxt}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="font-extrabold px-2 py-1 rounded bg-black/40 text-[11px]">${statusTxt}</span>
+                                <button onclick="concluirAviso(${av.id})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded font-bold transition" title="Concluir / Atualizar Recorrência"><i class="fa-solid fa-check"></i></button>
+                            </div>
                         </div>
                     `;
                 });
             } else {
                 secao.classList.add('hidden');
             }
+        }
+
+        function concluirAviso(id) {
+            let av = db.avisos.find(a => a.id === id);
+            if (!av) return;
+
+            if (av.recorrencia && av.recorrencia !== 'nenhuma' && av.tipo === 'data' && av.limiteData) {
+                let d = new Date(av.limiteData + 'T00:00:00');
+                if (av.recorrencia === 'mensal') d.setMonth(d.getMonth() + 1);
+                else if (av.recorrencia === 'bimestral') d.setMonth(d.getMonth() + 2);
+                else if (av.recorrencia === 'trimestral') d.setMonth(d.getMonth() + 3);
+                else if (av.recorrencia === 'semestral') d.setMonth(d.getMonth() + 6);
+                else if (av.recorrencia === 'anual') d.setFullYear(d.getFullYear() + 1);
+
+                av.limiteData = d.toISOString().split('T')[0];
+                alert(`Aviso renovado automaticamente para o próximo ciclo: ${av.limiteData}`);
+            } else {
+                if (confirm("Deseja marcar este aviso como concluído e removê-lo?")) {
+                    db.avisos = db.avisos.filter(a => a.id !== id);
+                }
+            }
+            salvarDB();
+            renderizarApp();
         }
 
         function renderizarPrevisaoAbastecimento(abasts, odometroAtual) {
@@ -921,7 +985,6 @@
                 return;
             }
 
-            // Ordenar do mais antigo para o mais recente
             let sorted = [...abasts].sort((a,b) => new Date(a.data) - new Date(b.data));
             let primeiro = sorted[0];
             let ultimo = sorted[sorted.length - 1];
@@ -934,7 +997,6 @@
 
             let mediaKmPorDia = kmTotaisIntervalo / diffDias;
 
-            // Intervalo médio em km entre abastecimentos consecutivos
             let somaKmAbast = 0;
             for(let i = 1; i < sorted.length; i++) {
                 somaKmAbast += (sorted[i].odometro - sorted[i-1].odometro);
@@ -1014,14 +1076,16 @@
             if (divAvisos) {
                 divAvisos.innerHTML = avisos.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhum aviso ativo.</p>';
                 avisos.forEach(av => {
+                    let detalhe = av.tipo === 'data' ? `Vencimento: ${av.limiteData} (${av.recorrencia || 'nenhuma'})` : `Limite: ${av.limite} km`;
                     divAvisos.innerHTML += `
                         <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
                             <div>
                                 <p class="font-bold text-yellow-400"><i class="fa-solid fa-bell mr-1"></i> ${av.titulo}</p>
-                                <p class="text-gray-400">Limite: ${av.limite} km</p>
+                                <p class="text-gray-400">${detalhe}</p>
                             </div>
                             <div class="flex gap-1">
                                 <button onclick="abrirModalAviso(${av.id})" class="text-gray-400 hover:text-yellow-400 p-2"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="concluirAviso(${av.id})" class="text-emerald-400 hover:text-emerald-300 p-2" title="Concluir/Renovar"><i class="fa-solid fa-check"></i></button>
                                 <button onclick="excluirRegistro('avisos', ${av.id})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
@@ -1161,7 +1225,7 @@
         }
 
         function abrirModalAbastecimento(id = null) {
-            const item = id ? db.abastecimentos.find(a => a.id === id) : { 
+            const item = id ? db.abastecimentos.filter(a => a.id === id)[0] : { 
                 litros: 40, valorTotal: 200, odometro: 0, 
                 data: new Date().toISOString().split('T')[0], 
                 hora: new Date().toLocaleTimeString().slice(0,5), 
@@ -1169,7 +1233,6 @@
             };
 
             let precoInicial = (item.litros > 0 && item.valorTotal > 0) ? (item.valorTotal / item.litros).toFixed(3) : '';
-
             let postosCadastrados = db.locais.filter(l => l.tipo === 'posto');
             let optionsPostos = postosCadastrados.map(p => `<option value="${p.nome}" ${item.posto === p.nome ? 'selected' : ''}>${p.nome}</option>`).join('');
 
@@ -1362,22 +1425,76 @@
             document.getElementById('modalForm').classList.remove('hidden');
         }
 
+        function alternarTipoAvisoModal() {
+            let tipo = document.getElementById('inpTipoAviso').value;
+            let blocoKm = document.getElementById('blocoKmLimite');
+            let blocoData = document.getElementById('blocoDataLimite');
+            let blocoRecorrencia = document.getElementById('blocoRecorrencia');
+
+            if (tipo === 'data') {
+                blocoKm.classList.add('hidden');
+                blocoData.classList.remove('hidden');
+                blocoRecorrencia.classList.remove('hidden');
+            } else {
+                blocoKm.classList.remove('hidden');
+                blocoData.classList.add('hidden');
+                blocoRecorrencia.classList.add('hidden');
+            }
+        }
+
         function abrirModalAviso(id = null) {
-            const item = id ? db.avisos.find(a => a.id === id) : { titulo: '', limite: 0, status: 'ativo' };
+            const item = id ? db.avisos.find(a => a.id === id) : { 
+                titulo: '', tipo: 'km', limite: 0, 
+                limiteData: new Date().toISOString().split('T')[0], 
+                recorrencia: 'nenhuma', status: 'ativo' 
+            };
+
+            let tipoAtual = item.tipo || 'km';
 
             document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-yellow-400"></i> Editar Aviso' : '<i class="fa-solid fa-bell text-yellow-400"></i> Novo Aviso';
             document.getElementById('modalCorpo').innerHTML = `
-                <div><label class="text-xs text-gray-400">Título do Aviso</label><input id="inpTitulo" value="${item.titulo}" placeholder="Ex: Troca de óleo, Calibragem..." class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                <div><label class="text-xs text-gray-400">Quilometragem Limite (km)</label><input id="inpLimite" type="number" value="${item.limite}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div>
+                    <label class="text-xs text-gray-400">Título do Aviso / Conta</label>
+                    <input id="inpTitulo" value="${item.titulo}" placeholder="Ex: IPVA, Licenciamento, Troca de Óleo..." class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400">Tipo de Alerta</label>
+                    <select id="inpTipoAviso" onchange="alternarTipoAvisoModal()" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                        <option value="km" ${tipoAtual === 'km' ? 'selected' : ''}>Por Quilometragem (km)</option>
+                        <option value="data" ${tipoAtual === 'data' ? 'selected' : ''}>Por Data (Calendário)</option>
+                    </select>
+                </div>
+                <div id="blocoKmLimite" class="${tipoAtual === 'data' ? 'hidden' : ''}">
+                    <label class="text-xs text-gray-400">Quilometragem Limite (km)</label>
+                    <input id="inpLimiteKm" type="number" value="${item.limite || 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                </div>
+                <div id="blocoDataLimite" class="${tipoAtual === 'km' ? 'hidden' : ''}">
+                    <label class="text-xs text-gray-400">Data Limite de Vencimento</label>
+                    <input id="inpLimiteData" type="date" value="${item.limiteData || new Date().toISOString().split('T')[0]}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                </div>
+                <div id="blocoRecorrencia" class="${tipoAtual === 'km' ? 'hidden' : ''}">
+                    <label class="text-xs text-gray-400">Repetição / Recorrência</label>
+                    <select id="inpRecorrencia" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                        <option value="nenhuma" ${item.recorrencia === 'nenhuma' ? 'selected' : ''}>Não se repete (Único)</option>
+                        <option value="mensal" ${item.recorrencia === 'mensal' ? 'selected' : ''}>Mensal</option>
+                        <option value="bimestral" ${item.recorrencia === 'bimestral' ? 'selected' : ''}>Bimestral</option>
+                        <option value="trimestral" ${item.recorrencia === 'trimestral' ? 'selected' : ''}>Trimestral</option>
+                        <option value="semestral" ${item.recorrencia === 'semestral' ? 'selected' : ''}>Semestral</option>
+                        <option value="anual" ${item.recorrencia === 'anual' ? 'selected' : ''}>Anual (IPVA, Seguro...)</option>
+                    </select>
+                </div>
             `;
 
             document.getElementById('modalBtnSalvar').onclick = () => {
+                let tipo = document.getElementById('inpTipoAviso').value;
                 const novoObjeto = {
                     id: id || Date.now(),
                     veiculoId: db.veiculoAtivoId,
                     titulo: document.getElementById('inpTitulo').value,
-                    limite: parseInt(document.getElementById('inpLimite').value) || 0,
-                    tipo: 'km',
+                    tipo: tipo,
+                    limite: tipo === 'km' ? (parseInt(document.getElementById('inpLimiteKm').value) || 0) : 0,
+                    limiteData: tipo === 'data' ? document.getElementById('inpLimiteData').value : '',
+                    recorrencia: tipo === 'data' ? document.getElementById('inpRecorrencia').value : 'nenhuma',
                     status: 'ativo'
                 };
 
