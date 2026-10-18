@@ -301,6 +301,7 @@
         let db = JSON.parse(localStorage.getItem('drivestats_db')) || PADRAO_DB;
         let fileHandle = null; 
         let chartInstance = null;
+        let tempManutencaoItens = [];
 
         if (!db.veiculos || !Array.isArray(db.veiculos) || db.veiculos.length === 0) {
             db = PADRAO_DB;
@@ -338,7 +339,6 @@
                 }
             }
             
-            // Se não encontrou permissão prévia, abre o pop-up de destaque obrigatório
             abrirModalBackupObrigatorio();
         }
 
@@ -1030,6 +1030,24 @@
             document.getElementById('modalForm').classList.remove('hidden');
         }
 
+        function calcularAbast(campo) {
+            let litros = parseFloat(document.getElementById('inpLitros').value) || 0;
+            let preco = parseFloat(document.getElementById('inpPrecoLitro').value) || 0;
+            let total = parseFloat(document.getElementById('inpValor').value) || 0;
+
+            if (campo === 'litros' || campo === 'preco') {
+                if (litros > 0 && preco > 0) {
+                    document.getElementById('inpValor').value = (litros * preco).toFixed(2);
+                }
+            } else if (campo === 'total') {
+                if (total > 0 && preco > 0) {
+                    document.getElementById('inpLitros').value = (total / preco).toFixed(2);
+                } else if (total > 0 && litros > 0) {
+                    document.getElementById('inpPrecoLitro').value = (total / litros).toFixed(3);
+                }
+            }
+        }
+
         function abrirModalAbastecimento(id = null) {
             const item = id ? db.abastecimentos.find(a => a.id === id) : { 
                 litros: 40, valorTotal: 200, odometro: 0, 
@@ -1038,18 +1056,45 @@
                 posto: '' 
             };
 
+            let precoInicial = (item.litros > 0 && item.valorTotal > 0) ? (item.valorTotal / item.litros).toFixed(3) : '';
+
+            // Filtrar locais cadastrados que são postos
+            let postosCadastrados = db.locais.filter(l => l.tipo === 'posto');
+            let optionsPostos = postosCadastrados.map(p => `<option value="${p.nome}" ${item.posto === p.nome ? 'selected' : ''}>${p.nome}</option>`).join('');
+
             document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-emerald-400"></i> Editar Abastecimento' : '<i class="fa-solid fa-gas-pump text-emerald-400"></i> Novo Abastecimento';
             document.getElementById('modalCorpo').innerHTML = `
                 <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs text-gray-400">Litros</label><input id="inpLitros" type="number" step="0.1" value="${item.litros}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                    <div><label class="text-xs text-gray-400">Valor Total (R$)</label><input id="inpValor" type="number" step="0.01" value="${item.valorTotal}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div>
+                        <label class="text-xs text-gray-400">Litros</label>
+                        <input id="inpLitros" type="number" step="0.01" value="${item.litros}" oninput="calcularAbast('litros')" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">Preço / Litro (R$)</label>
+                        <input id="inpPrecoLitro" type="number" step="0.001" value="${precoInicial}" oninput="calcularAbast('preco')" placeholder="Opcional" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                    </div>
                 </div>
-                <div><label class="text-xs text-gray-400">Odômetro Atual (km)</label><input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs text-gray-400">Valor Total (R$)</label>
+                        <input id="inpValor" type="number" step="0.01" value="${item.valorTotal}" oninput="calcularAbast('total')" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">Odômetro Atual (km)</label>
+                        <input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${item.data}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
                     <div><label class="text-xs text-gray-400">Hora</label><input id="inpHora" type="time" value="${item.hora}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
                 </div>
-                <div><label class="text-xs text-gray-400">Posto</label><input id="inpPosto" value="${item.posto}" placeholder="Ex: Posto Shell" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div>
+                    <label class="text-xs text-gray-400">Posto de Combustível</label>
+                    <select id="inpPosto" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                        <option value="">Selecione um posto...</option>
+                        ${optionsPostos}
+                    </select>
+                </div>
             `;
 
             document.getElementById('modalBtnSalvar').onclick = () => {
@@ -1092,6 +1137,44 @@
             document.getElementById('modalForm').classList.remove('hidden');
         }
 
+        function renderTempItensManutencao() {
+            const container = document.getElementById('listaItensManutencao');
+            if(!container) return;
+            container.innerHTML = '';
+            let total = 0;
+
+            tempManutencaoItens.forEach((it, idx) => {
+                total += parseFloat(it.valor) || 0;
+                container.innerHTML += `
+                    <div class="flex gap-2 items-center mb-2">
+                        <input type="text" value="${it.nome}" oninput="tempManutencaoItens[${idx}].nome = this.value" placeholder="Serviço ou Peça" class="flex-1 bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
+                        <input type="number" step="0.01" value="${it.valor}" oninput="tempManutencaoItens[${idx}].valor = parseFloat(this.value)||0; atualizarTotalManutencaoModal();" placeholder="Valor R$" class="w-28 bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
+                        <button onclick="removerItemTempManutencao(${idx})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+            });
+            document.getElementById('totalManutencaoModal').textContent = 'R$ ' + total.toFixed(2);
+        }
+
+        function adicionarItemTempManutencao() {
+            tempManutencaoItens.push({ nome: '', valor: 0 });
+            renderTempItensManutencao();
+        }
+
+        function removerItemTempManutencao(idx) {
+            if (tempManutencaoItens.length <= 1) {
+                alert("Mantenha ao menos um item na manutenção.");
+                return;
+            }
+            tempManutencaoItens.splice(idx, 1);
+            renderTempItensManutencao();
+        }
+
+        function atualizarTotalManutencaoModal() {
+            let total = tempManutencaoItens.reduce((acc, i) => acc + (parseFloat(i.valor) || 0), 0);
+            document.getElementById('totalManutencaoModal').textContent = 'R$ ' + total.toFixed(2);
+        }
+
         function abrirModalManutencao(id = null) {
             const item = id ? db.manutencoes.find(m => m.id === id) : { 
                 oficina: '', odometro: 0, 
@@ -1099,16 +1182,40 @@
                 itens: [{ nome: '', valor: 0 }] 
             };
 
+            tempManutencaoItens = item.itens ? JSON.parse(JSON.stringify(item.itens)) : [{ nome: '', valor: 0 }];
+
+            let oficinasCadastradas = db.locais.filter(l => l.tipo === 'oficina');
+            let optionsOficinas = oficinasCadastradas.map(o => `<option value="${o.nome}" ${item.oficina === o.nome ? 'selected' : ''}>${o.nome}</option>`).join('');
+
             document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-blue-400"></i> Editar Manutenção' : '<i class="fa-solid fa-wrench text-blue-400"></i> Nova Manutenção';
             document.getElementById('modalCorpo').innerHTML = `
-                <div><label class="text-xs text-gray-400">Oficina / Estabelecimento</label><input id="inpOficina" value="${item.oficina}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div>
+                    <label class="text-xs text-gray-400">Oficina / Concessionária</label>
+                    <select id="inpOficina" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                        <option value="">Selecione uma oficina...</option>
+                        ${optionsOficinas}
+                    </select>
+                </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div><label class="text-xs text-gray-400">Odômetro (km)</label><input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
                     <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${item.data}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
                 </div>
-                <div><label class="text-xs text-gray-400">Serviço / Peça Realizada</label><input id="inpServico" value="${item.itens[0]?.nome || ''}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                <div><label class="text-xs text-gray-400">Valor do Serviço (R$)</label><input id="inpValor" type="number" step="0.01" value="${item.itens[0]?.valor || 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div class="border-t border-gray-800 pt-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold text-gray-300">Serviços e Peças Realizadas</label>
+                        <button onclick="adicionarItemTempManutencao()" type="button" class="bg-blue-600/30 hover:bg-blue-600/50 text-blue-400 border border-blue-500/40 text-xs px-2.5 py-1 rounded font-bold flex items-center gap-1 transition">
+                            <i class="fa-solid fa-plus"></i> Adicionar Item
+                        </button>
+                    </div>
+                    <div id="listaItensManutencao" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+                    <div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-800 font-bold text-sm">
+                        <span class="text-gray-400">Total da Manutenção:</span>
+                        <span id="totalManutencaoModal" class="text-emerald-400 text-base">R$ 0,00</span>
+                    </div>
+                </div>
             `;
+
+            renderTempItensManutencao();
 
             document.getElementById('modalBtnSalvar').onclick = () => {
                 const nomeOficina = document.getElementById('inpOficina').value;
@@ -1118,10 +1225,7 @@
                     oficina: nomeOficina,
                     odometro: parseInt(document.getElementById('inpOdometro').value) || 0,
                     data: document.getElementById('inpData').value,
-                    itens: [{
-                        nome: document.getElementById('inpServico').value,
-                        valor: parseFloat(document.getElementById('inpValor').value) || 0
-                    }]
+                    itens: tempManutencaoItens.map(it => ({ nome: it.nome, valor: parseFloat(it.valor) || 0 }))
                 };
 
                 if (id) {
