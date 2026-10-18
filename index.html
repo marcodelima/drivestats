@@ -1035,12 +1035,34 @@
             const divAbast = document.getElementById('listaAbastecimentos');
             if (divAbast) {
                 divAbast.innerHTML = abasts.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhum abastecimento registrado.</p>';
-                abasts.slice().reverse().forEach(a => {
+                
+                // Ordena cronologicamente para calcular o consumo entre o abastecimento anterior e o atual
+                let abastsOrdenados = [...abasts].sort((a, b) => a.odometro - b.odometro);
+
+                abasts.slice().reverse().forEach((a, indexInvertido, arrayInvertido) => {
+                    // Encontra a posição correspondente no array ordenado para calcular o consumo
+                    let idxOriginal = abastsOrdenados.findIndex(item => item.id === a.id);
+                    let badgeConsumo = '';
+
+                    if (idxOriginal > 0) {
+                        let abastAnterior = abastsOrdenados[idxOriginal - 1];
+                        let kmRodados = a.odometro - abastAnterior.odometro;
+                        if (kmRodados > 0 && a.litros > 0) {
+                            let consumoKmPorL = kmRodados / a.litros;
+                            badgeConsumo = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-extrabold text-[11px] ml-2"><i class="fa-solid fa-gauge-high mr-0.5"></i> ${consumoKmPorL.toFixed(1)} km/L</span>`;
+                        }
+                    } else {
+                        badgeConsumo = `<span class="text-gray-500 text-[10px] ml-2">(Referência inicial)</span>`;
+                    }
+
                     divAbast.innerHTML += `
                         <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
                             <div>
-                                <p class="font-bold text-white"><i class="fa-solid fa-gas-pump text-emerald-400 mr-1"></i> ${a.litros} L - R$ ${a.valorTotal.toFixed(2)}</p>
-                                <p class="text-gray-400">${a.data} às ${a.hora} • ${a.odometro} km • ${a.posto || 'Posto não informado'}</p>
+                                <p class="font-bold text-white flex items-center flex-wrap gap-1">
+                                    <span><i class="fa-solid fa-gas-pump text-emerald-400 mr-1"></i> ${a.litros} L - R$ ${a.valorTotal.toFixed(2)}</span>
+                                    ${badgeConsumo}
+                                </p>
+                                <p class="text-gray-400 mt-0.5">${a.data} às ${a.hora} • ${a.odometro.toLocaleString()} km • ${a.posto || 'Posto não informado'}</p>
                             </div>
                             <div class="flex gap-1">
                                 <button onclick="abrirModalAbastecimento(${a.id})" class="text-gray-400 hover:text-emerald-400 p-2"><i class="fa-solid fa-pen"></i></button>
@@ -1061,7 +1083,7 @@
                         <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
                             <div>
                                 <p class="font-bold text-white"><i class="fa-solid fa-wrench text-blue-400 mr-1"></i> ${m.oficina} - R$ ${totalM.toFixed(2)}</p>
-                                <p class="text-gray-400">${m.data} • ${m.odometro} km • ${itensStr}</p>
+                                <p class="text-gray-400">${m.data} • ${m.odometro.toLocaleString()} km • ${itensStr}</p>
                             </div>
                             <div class="flex gap-1">
                                 <button onclick="abrirModalManutencao(${m.id})" class="text-gray-400 hover:text-blue-400 p-2"><i class="fa-solid fa-pen"></i></button>
@@ -1076,7 +1098,7 @@
             if (divAvisos) {
                 divAvisos.innerHTML = avisos.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhum aviso ativo.</p>';
                 avisos.forEach(av => {
-                    let detalhe = av.tipo === 'data' ? `Vencimento: ${av.limiteData} (${av.recorrencia || 'nenhuma'})` : `Limite: ${av.limite} km`;
+                    let detalhe = av.tipo === 'data' ? `Vencimento: ${av.limiteData} (${av.recorrencia || 'nenhuma'})` : `Limite: ${av.limite.toLocaleString()} km`;
                     divAvisos.innerHTML += `
                         <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
                             <div>
@@ -1530,7 +1552,7 @@
             document.getElementById('modalBtnSalvar').onclick = () => {
                 const novoObjeto = {
                     id: id || Date.now(),
-                    nome: document.getElementById('inpNome').value,
+                    nome: document.getElementById('inpNome0').value || document.getElementById('inpNome').value,
                     tipo: document.getElementById('inpTipo').value
                 };
 
