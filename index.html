@@ -554,7 +554,7 @@
                         const postoVal = colunas[4] ? colunas[4].replace(/"/g, '').trim() : 'Posto Importado';
 
                         if (litrosVal > 0 || valorVal > 0) {
-                            db.abastecimentos.push({
+                            db.abastecimentos.unshift({
                                 id: Date.now() + Math.floor(Math.random() * 1000),
                                 veiculoId: idVeiculoTarget,
                                 data: dataVal,
@@ -566,7 +566,7 @@
                             });
 
                             if (postoVal && !db.locais.some(l => l.nome.toLowerCase() === postoVal.toLowerCase())) {
-                                db.locais.push({
+                                db.locais.unshift({
                                     id: Date.now() + Math.floor(Math.random() * 10000),
                                     nome: postoVal,
                                     tipo: 'posto'
@@ -858,7 +858,7 @@
                 `;
             }
 
-            const abasts = db.abastecimentos.filter(a => a.veiculoId === veiculo.id).sort((a,b) => a.odometro - b.odometro);
+            const abasts = db.abastecimentos.filter(a => a.veiculoId === veiculo.id);
             const manuts = db.manutencoes.filter(m => m.veiculoId === veiculo.id);
             const avisos = db.avisos.filter(av => av.veiculoId === veiculo.id && av.status === 'ativo');
 
@@ -870,9 +870,10 @@
             document.getElementById('statQtdAlertas').textContent = avisos.length;
 
             let mediaConsumo = 0;
-            if (abasts.length > 1) {
-                let kmRodados = abasts[abasts.length - 1].odometro - abasts[0].odometro;
-                let litrosTotais = abasts.slice(1).reduce((acc, curr) => acc + curr.litros, 0);
+            let abastsOrdenadosKm = [...abasts].sort((a,b) => a.odometro - b.odometro);
+            if (abastsOrdenadosKm.length > 1) {
+                let kmRodados = abastsOrdenadosKm[abastsOrdenadosKm.length - 1].odometro - abastsOrdenadosKm[0].odometro;
+                let litrosTotais = abastsOrdenadosKm.slice(1).reduce((acc, curr) => acc + curr.litros, 0);
                 if(litrosTotais > 0) mediaConsumo = kmRodados / litrosTotais;
             }
             document.getElementById('statMediaConsumo').textContent = mediaConsumo.toFixed(1) + ' km/L';
@@ -1036,16 +1037,15 @@
             if (divAbast) {
                 divAbast.innerHTML = abasts.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhum abastecimento registrado.</p>';
                 
-                // Ordena cronologicamente para calcular o consumo entre o abastecimento anterior e o atual
-                let abastsOrdenados = [...abasts].sort((a, b) => a.odometro - b.odometro);
+                let abastsCronologicos = [...abasts].sort((a, b) => a.odometro - b.odometro || new Date(a.data) - new Date(b.data) || a.id - b.id);
+                let abastsExibicao = [...abasts].sort((a, b) => b.odometro - a.odometro || new Date(b.data) - new Date(a.data) || b.id - a.id);
 
-                abasts.slice().reverse().forEach((a, indexInvertido, arrayInvertido) => {
-                    // Encontra a posição correspondente no array ordenado para calcular o consumo
-                    let idxOriginal = abastsOrdenados.findIndex(item => item.id === a.id);
+                abastsExibicao.forEach((a) => {
+                    let idxOriginal = abastsCronologicos.findIndex(item => item.id === a.id);
                     let badgeConsumo = '';
 
                     if (idxOriginal > 0) {
-                        let abastAnterior = abastsOrdenados[idxOriginal - 1];
+                        let abastAnterior = abastsCronologicos[idxOriginal - 1];
                         let kmRodados = a.odometro - abastAnterior.odometro;
                         if (kmRodados > 0 && a.litros > 0) {
                             let consumoKmPorL = kmRodados / a.litros;
@@ -1076,7 +1076,10 @@
             const divManut = document.getElementById('listaManutencoes');
             if (divManut) {
                 divManut.innerHTML = manuts.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhuma manutenção registrada.</p>';
-                manuts.slice().reverse().forEach(m => {
+                
+                let manutsExibicao = [...manuts].sort((a, b) => b.odometro - a.odometro || new Date(b.data) - new Date(a.data) || b.id - a.id);
+
+                manutsExibicao.forEach(m => {
                     let totalM = m.itens.reduce((acc, i) => acc + i.valor, 0);
                     let itensStr = m.itens.map(i => i.nome + ' (R$ ' + i.valor.toFixed(2) + ')').join(', ');
                     divManut.innerHTML += `
@@ -1138,7 +1141,7 @@
         function renderizarGrafico() {
             const ctx = document.getElementById('graficoConsumo');
             if (!ctx) return;
-            const abasts = db.abastecimentos.filter(a => a.veiculoId === db.veiculoAtivoId);
+            const abasts = db.abastecimentos.filter(a => a.veiculoId === db.veiculoAtivoId).sort((a,b) => a.odometro - b.odometro);
             
             if (chartInstance) chartInstance.destroy();
 
@@ -1173,6 +1176,42 @@
                 salvarDB();
                 renderizarApp();
             }
+        }
+
+        // FUNÇÃO AUXILIAR DE VALIDAÇÃO DE ODÔMETRO
+        function validarOdodmetroNovo(veiculoId, novoOdometro, dataLancamento, idAtualExcecao = null) {
+            const hojeStr = new Date().toISOString().split('T')[0];
+            
+            // Junta todos os registros do veículo (abastecimentos e manutenções) para achar o mais novo
+            const abasts = db.abastecimentos.filter(a => a.veiculoId === veiculoId && a.id !== idAtualExcecao);
+            const manuts = db.manutencoes.filter(m => m.veiculoId === veiculoId && m.id !== idAtualExcecao);
+            const todosRegistros = [...abasts, ...manuts];
+
+            if (todosRegistros.length === 0) return { valido: true };
+
+            // Acha o registro com maior quilometragem (o mais novo/atual)
+            todosRegistros.sort((a, b) => b.odometro - a.odometro || new Date(b.data) - new Date(a.data));
+            const maisNovo = todosRegistros[0];
+
+            // Regra 1: Se o lançamento for na data de hoje ou futura, o odômetro não pode ser inferior ao último lançamento feito
+            if (dataLancamento >= hojeStr) {
+                if (novoOdometro < maisNovo.odometro) {
+                    return { 
+                        valido: false, 
+                        mensagem: `Erro: Para lançamentos na data atual ou futura, o odômetro (${novoOdometro.toLocaleString()} km) não pode ser inferior ao último registro cadastrado (${maisNovo.odometro.toLocaleString()} km em ${maisNovo.data}). Por favor, corrija o valor.` 
+                    };
+                }
+            } else {
+                // Regra 2: Se for no passado, o odômetro deve ser menor ou igual ao lançamento mais novo
+                if (novoOdometro > maisNovo.odometro) {
+                    return { 
+                        valido: false, 
+                        mensagem: `Erro: Para lançamentos no passado, o odômetro (${novoOdometro.toLocaleString()} km) não pode ser superior ao registro mais novo do veículo (${maisNovo.odometro.toLocaleString()} km). Por favor, corrija o valor.` 
+                    };
+                }
+            }
+
+            return { valido: true };
         }
 
         // MODAIS DE EDIÇÃO & CRIAÇÃO
@@ -1217,7 +1256,7 @@
                     const idx = db.veiculos.findIndex(v => v.id === id);
                     db.veiculos[idx] = novoObjeto;
                 } else {
-                    db.veiculos.push(novoObjeto);
+                    db.veiculos.unshift(novoObjeto);
                     db.veiculoAtivoId = novoObjeto.id;
                 }
                 salvarDB();
@@ -1295,14 +1334,23 @@
 
             document.getElementById('modalBtnSalvar').onclick = () => {
                 const novoOdometro = parseInt(document.getElementById('inpOdometro').value) || 0;
+                const dataVal = document.getElementById('inpData').value;
                 const nomePosto = document.getElementById('inpPosto').value;
+
+                // Validação de Odômetro
+                const validacao = validarOdodmetroNovo(db.veiculoAtivoId, novoOdometro, dataVal, id);
+                if (!validacao.valido) {
+                    alert(validacao.mensagem);
+                    return;
+                }
+
                 const novoObjeto = {
                     id: id || Date.now(),
                     veiculoId: db.veiculoAtivoId,
                     litros: parseFloat(document.getElementById('inpLitros').value) || 0,
                     valorTotal: parseFloat(document.getElementById('inpValor').value) || 0,
                     odometro: novoOdometro,
-                    data: document.getElementById('inpData').value,
+                    data: dataVal,
                     hora: document.getElementById('inpHora').value,
                     posto: nomePosto
                 };
@@ -1311,11 +1359,11 @@
                     const idx = db.abastecimentos.findIndex(a => a.id === id);
                     db.abastecimentos[idx] = novoObjeto;
                 } else {
-                    db.abastecimentos.push(novoObjeto);
+                    db.abastecimentos.unshift(novoObjeto);
                 }
 
                 if (nomePosto && !db.locais.some(l => l.nome.toLowerCase() === nomePosto.toLowerCase())) {
-                    db.locais.push({
+                    db.locais.unshift({
                         id: Date.now() + Math.floor(Math.random() * 10000),
                         nome: nomePosto,
                         tipo: 'posto'
@@ -1414,13 +1462,23 @@
             renderTempItensManutencao();
 
             document.getElementById('modalBtnSalvar').onclick = () => {
+                const novoOdometro = parseInt(document.getElementById('inpOdometro').value) || 0;
+                const dataVal = document.getElementById('inpData').value;
                 const nomeOficina = document.getElementById('inpOficina').value;
+
+                // Validação de Odômetro
+                const validacao = validarOdodmetroNovo(db.veiculoAtivoId, novoOdometro, dataVal, id);
+                if (!validacao.valido) {
+                    alert(validacao.mensagem);
+                    return;
+                }
+
                 const novoObjeto = {
                     id: id || Date.now(),
                     veiculoId: db.veiculoAtivoId,
                     oficina: nomeOficina,
-                    odometro: parseInt(document.getElementById('inpOdometro').value) || 0,
-                    data: document.getElementById('inpData').value,
+                    odometro: novoOdometro,
+                    data: dataVal,
                     itens: tempManutencaoItens.map(it => ({ nome: it.nome, valor: parseFloat(it.valor) || 0 }))
                 };
 
@@ -1428,11 +1486,11 @@
                     const idx = db.manutencoes.findIndex(m => m.id === id);
                     db.manutencoes[idx] = novoObjeto;
                 } else {
-                    db.manutencoes.push(novoObjeto);
+                    db.manutencoes.unshift(novoObjeto);
                 }
 
                 if (nomeOficina && !db.locais.some(l => l.nome.toLowerCase() === nomeOficina.toLowerCase())) {
-                    db.locais.push({
+                    db.locais.unshift({
                         id: Date.now() + Math.floor(Math.random() * 10000),
                         nome: nomeOficina,
                         tipo: 'oficina'
@@ -1524,7 +1582,7 @@
                     const idx = db.avisos.findIndex(a => a.id === id);
                     db.avisos[idx] = novoObjeto;
                 } else {
-                    db.avisos.push(novoObjeto);
+                    db.avisos.unshift(novoObjeto);
                 }
 
                 salvarDB();
@@ -1552,7 +1610,7 @@
             document.getElementById('modalBtnSalvar').onclick = () => {
                 const novoObjeto = {
                     id: id || Date.now(),
-                    nome: document.getElementById('inpNome0').value || document.getElementById('inpNome').value,
+                    nome: document.getElementById('inpNome').value,
                     tipo: document.getElementById('inpTipo').value
                 };
 
@@ -1560,7 +1618,7 @@
                     const idx = db.locais.findIndex(l => l.id === id);
                     db.locais[idx] = novoObjeto;
                 } else {
-                    db.locais.push(novoObjeto);
+                    db.locais.unshift(novoObjeto);
                 }
 
                 salvarDB();
