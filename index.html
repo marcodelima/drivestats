@@ -7,11 +7,12 @@
     <!-- FAVICON (MINI ÍCONE NA ABA) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%2310b981%22><path d=%22M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z%22/></svg>">
     <!-- Tailwind CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="vendor/tailwind.css">
     <!-- Chart.js para gráficos -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="vendor/chart.umd.js"></script>
+    <script src="vendor/idb-keyval.js"></script>
     <!-- FontAwesome para ícones visuais -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
     <style>
         body { background-color: #0b0f19; color: #f3f4f6; }
     </style>
@@ -55,7 +56,8 @@
         <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl mb-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs">
             <div class="flex items-center gap-2">
                 <span id="statusTxtDot" class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></span>
-                <span id="statusTxtTexto" class="text-gray-300 font-medium">Modo Local (Não Sincronizado)</span>
+                <span id="statusTxtTexto" class="text-gray-300 font-medium">Dados neste navegador (sem sincronização)</span>
+                <span class="text-gray-500 hidden sm:inline">O site não envia seu banco para um servidor.</span>
             </div>
             <div class="flex flex-wrap gap-2">
                 <button id="btnVincularTxt" onclick="vincularArquivoTXT()" class="bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-400 border border-emerald-500/50 px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1">
@@ -88,7 +90,7 @@
                     <p id="statGastoTotal" class="text-xl font-bold text-white mt-1">R$ 0,00</p>
                 </div>
                 <div class="bg-gray-900/90 border border-gray-800 p-3 rounded-xl shadow">
-                    <span class="text-xs text-gray-400 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-yellow-400"></i> Alertas</span>
+                    <span class="text-xs text-gray-400 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation text-yellow-400"></i> Avisos ativos</span>
                     <p id="statQtdAlertas" class="text-xl font-bold text-yellow-400 mt-1">0</p>
                 </div>
             </div>
@@ -96,7 +98,7 @@
             <!-- SEÇÃO DE AVISOS EM DESTAQUE NA TELA INICIAL -->
             <div id="secaoAlertasDestaque" class="hidden bg-gray-900/90 border border-red-500/40 p-4 rounded-2xl shadow-lg space-y-3">
                 <h3 class="text-sm font-bold text-red-400 flex items-center gap-2">
-                    <i class="fa-solid fa-triangle-exclamation animate-pulse"></i> Avisos e Manutenções Urgentes
+                    <i class="fa-solid fa-triangle-exclamation animate-pulse"></i> Avisos e Manutenções Próximas ou Vencidas
                 </h3>
                 <div id="listaAlertasDestaque" class="space-y-2"></div>
             </div>
@@ -244,6 +246,7 @@
                 <button onclick="vincularArquivoTXT(true)" class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-extrabold px-4 py-3 rounded-xl text-sm shadow-lg shadow-emerald-500/30 transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-file-arrow-up"></i> Selecionar Arquivo .TXT de Backup
                 </button>
+                <button id="btnReautorizarArquivo" onclick="reautorizarArquivoSalvo()" class="w-full bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 font-bold px-4 py-2.5 rounded-xl text-xs transition hidden">Reautorizar arquivo já vinculado</button>
                 <button onclick="fecharModalBackupObrigatorio()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white font-medium px-4 py-2.5 rounded-xl text-xs transition">
                     Continuar sem arquivo (Modo Local Temporário)
                 </button>
@@ -318,9 +321,52 @@
         };
 
         let db = JSON.parse(localStorage.getItem('drivestats_db')) || PADRAO_DB;
-        let fileHandle = null; 
+        let fileHandle = null;
+        let filaGravacao = Promise.resolve();
+        let ultimoAcessoNominatim = 0;
+        let pendingFileHandle = null;
         let chartInstance = null;
         let tempManutencaoItens = [];
+
+        function dataLocalISO(data = new Date()) {
+            const ano = data.getFullYear();
+            const mes = String(data.getMonth() + 1).padStart(2, '0');
+            const dia = String(data.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
+        }
+
+        function esc(valor) {
+            return String(valor ?? '').replace(/[&<>"']/g, caractere => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[caractere]);
+        }
+
+        function validarBanco(dados) {
+            if (!dados || typeof dados !== 'object' || !Array.isArray(dados.veiculos) || !dados.veiculos.length) return false;
+            for (const chave of ['abastecimentos', 'manutencoes', 'avisos', 'locais']) {
+                if (!Array.isArray(dados[chave])) return false;
+            }
+            if (!dados.veiculos.every(v => v && Number.isSafeInteger(v.id) && typeof v.nome === 'string' && Number.isFinite(Number(v.odometro)))) return false;
+            const ids = new Set(dados.veiculos.map(v => v.id));
+            if (!['abastecimentos', 'manutencoes', 'avisos'].every(chave => dados[chave].every(r => r && Number.isSafeInteger(r.id) && Number.isSafeInteger(r.veiculoId) && ids.has(r.veiculoId)))) return false;
+            if (!dados.abastecimentos.every(r => Number.isFinite(Number(r.odometro)) && Number.isFinite(Number(r.litros)) && Number.isFinite(Number(r.valorTotal)))) return false;
+            if (!dados.manutencoes.every(r => Array.isArray(r.itens) && r.itens.every(i => i && typeof i.nome === 'string' && Number.isFinite(Number(i.valor))))) return false;
+            if (!dados.avisos.every(r => typeof r.titulo === 'string')) return false;
+            return dados.locais.every(l => l && Number.isSafeInteger(l.id) && typeof l.nome === 'string' && typeof l.tipo === 'string' && (l.endereco == null || typeof l.endereco === 'string') && (l.latitude == null || Number.isFinite(Number(l.latitude))) && (l.longitude == null || Number.isFinite(Number(l.longitude))));
+        }
+
+        function csvParseLinha(linha, delimitador = ';') {
+            const campos = []; let campo = ''; let aspas = false;
+            for (let i = 0; i < linha.length; i++) {
+                const c = linha[i];
+                if (c === '"' && aspas && linha[i + 1] === '"') { campo += '"'; i++; }
+                else if (c === '"') aspas = !aspas;
+                else if (c === delimitador && !aspas) { campos.push(campo); campo = ''; }
+                else campo += c;
+            }
+            campos.push(campo);
+            return campos;
+        }
 
         if (!db.veiculos || !Array.isArray(db.veiculos) || db.veiculos.length === 0) {
             db = PADRAO_DB;
@@ -338,21 +384,18 @@
             }
             const storedHandle = await window.idbKeyval.get('drivestats_file_handle');
             if (storedHandle) {
+                pendingFileHandle = storedHandle;
                 try {
-                    if ((await storedHandle.queryPermission({ mode: 'readwrite' })) === 'granted') {
+                    const permission = await storedHandle.queryPermission({ mode: 'readwrite' });
+                    if (permission === 'granted') {
                         fileHandle = storedHandle;
                         const file = await fileHandle.getFile();
                         const text = await file.text();
-                        if (text.trim()) {
-                            try {
-                                const dadosImportados = JSON.parse(text);
-                                if (dadosImportados.veiculos && Array.isArray(dadosImportados.veiculos)) {
-                                    db = dadosImportados;
-                                    if (!db.locais) db.locais = [];
-                                    localStorage.setItem('drivestats_db', JSON.stringify(db));
-                                }
-                            } catch (e) {}
-                        }
+                        if (!text.trim()) throw new Error('Arquivo vinculado está vazio');
+                        const dadosImportados = JSON.parse(text);
+                        if (!validarBanco(dadosImportados)) throw new Error('Banco vinculado inválido');
+                        db = dadosImportados;
+                        localStorage.setItem('drivestats_db', JSON.stringify(db));
                         atualizarStatusTxtUI(file.name);
                         inicializarApp();
                         return;
@@ -363,6 +406,25 @@
             }
             
             abrirModalBackupObrigatorio();
+            const btnReautorizar = document.getElementById('btnReautorizarArquivo');
+            if (btnReautorizar && pendingFileHandle) btnReautorizar.classList.remove('hidden');
+        }
+
+        async function reautorizarArquivoSalvo() {
+            if (!pendingFileHandle || !pendingFileHandle.requestPermission) return;
+            try {
+                if ((await pendingFileHandle.requestPermission({ mode: 'readwrite' })) !== 'granted') return;
+                fileHandle = pendingFileHandle;
+                const arquivo = await fileHandle.getFile();
+                const texto = await arquivo.text();
+                const dados = JSON.parse(texto);
+                if (!validarBanco(dados)) throw new Error('Banco inválido');
+                db = dados;
+                if (window.idbKeyval) await window.idbKeyval.set('drivestats_file_handle', fileHandle);
+                localStorage.setItem('drivestats_db', JSON.stringify(db));
+                atualizarStatusTxtUI(arquivo.name);
+                fecharModalBackupObrigatorio(); inicializarApp();
+            } catch (erro) { fileHandle = null; alert('Não foi possível reautorizar o arquivo ou validar o banco.'); }
         }
 
         function abrirModalBackupObrigatorio() {
@@ -375,19 +437,19 @@
         }
 
         async function salvarDB() {
-            localStorage.setItem('drivestats_db', JSON.stringify(db));
-            
-            if (fileHandle) {
-                try {
-                    const writable = await fileHandle.createWritable();
-                    await writable.write(JSON.stringify(db, null, 2));
-                    await writable.close();
-                    console.log("Arquivo TXT sincronizado instantaneamente no disco.");
-                } catch (err) {
-                    console.error("Erro ao gravar automaticamente no arquivo TXT:", err);
-                    desvincularArquivo();
-                }
-            }
+            const snapshot = JSON.stringify(db, null, 2);
+            localStorage.setItem('drivestats_db', snapshot);
+            if (!fileHandle) return;
+            const handle = fileHandle;
+            filaGravacao = filaGravacao.then(async () => {
+                const writable = await handle.createWritable();
+                await writable.write(snapshot);
+                await writable.close();
+            }).catch(err => {
+                console.error('Erro ao gravar automaticamente no arquivo TXT:', err);
+                if (fileHandle === handle) desvincularArquivo();
+            });
+            await filaGravacao;
         }
 
         async function vincularArquivoTXT(veioDoModal = false) {
@@ -403,31 +465,19 @@
                     
                     fileHandle = handle;
                     
-                    if (!window.idbKeyval) {
-                        const script = document.createElement('script');
-                        script.src = 'https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.min.js';
-                        script.onload = () => window.idbKeyval.set('drivestats_file_handle', fileHandle);
-                        document.head.appendChild(script);
-                    } else {
-                        window.idbKeyval.set('drivestats_file_handle', fileHandle);
-                    }
-
                     const file = await fileHandle.getFile();
                     const text = await file.text();
                     
                     if (text.trim()) {
-                        try {
-                            const dadosImportados = JSON.parse(text);
-                            if (dadosImportados.veiculos && Array.isArray(dadosImportados.veiculos)) {
-                                db = dadosImportados;
-                                if (!db.locais) db.locais = [];
-                                localStorage.setItem('drivestats_db', JSON.stringify(db));
-                            }
-                        } catch (e) {
-                            console.warn("Arquivo vazio ou formato inicial diferente, mantendo base atual.");
-                        }
+                        let dadosImportados;
+                        try { dadosImportados = JSON.parse(text); }
+                        catch (e) { fileHandle = null; alert('O arquivo não contém JSON válido; vínculo cancelado.'); return; }
+                        if (!validarBanco(dadosImportados)) { fileHandle = null; alert('Estrutura do banco inválida; vínculo cancelado.'); return; }
+                        if (!confirm('O arquivo selecionado contém dados. Deseja substituir os dados abertos por esse banco?')) { fileHandle = null; return; }
+                        db = dadosImportados;
+                        localStorage.setItem('drivestats_db', JSON.stringify(db));
                     }
-                    
+                    if (window.idbKeyval) await window.idbKeyval.set('drivestats_file_handle', fileHandle);
                     atualizarStatusTxtUI(file.name);
                     document.getElementById('modalBackupObrigatorio').classList.add('hidden');
                     inicializarApp();
@@ -480,19 +530,14 @@
                 if (btnVincular) btnVincular.classList.add('opacity-50');
             } else {
                 dot.className = "w-3 h-3 rounded-full bg-yellow-500 animate-pulse";
-                texto.textContent = "Modo Local (Não Sincronizado)";
+                texto.textContent = "Dados neste navegador (sem sincronização)";
                 btnSairHeader.classList.remove('flex');
                 btnSairHeader.classList.add('hidden');
                 if (btnVincular) btnVincular.classList.remove('opacity-50');
             }
         }
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.min.js';
-            script.onload = () => tentarRestaurarHandle();
-            document.head.appendChild(script);
-        });
+        document.addEventListener('DOMContentLoaded', () => tentarRestaurarHandle());
 
         function inicializarApp() {
             if (!db.veiculoAtivoId || !db.veiculos.some(v => v.id === db.veiculoAtivoId)) {
@@ -503,13 +548,15 @@
         }
 
         function salvarBancoTXT() {
-            const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+            const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
             const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("href", url);
             downloadAnchor.setAttribute("download", "drivestats_db.txt");
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
+            URL.revokeObjectURL(url);
         }
 
         function triggerImportarExcel() {
@@ -524,59 +571,40 @@
             reader.onload = function(e) {
                 const texto = e.target.result;
                 
-                if (file.name.endsWith('.txt') || file.name.endsWith('.json')) {
-                    try {
-                        const dadosImportados = JSON.parse(texto);
-                        if (dadosImportados.veiculos && Array.isArray(dadosImportados.veiculos)) {
-                            db = dadosImportados;
-                            if (!db.locais) db.locais = [];
-                            salvarDB();
-                            inicializarApp();
-                            alert("Banco de dados completo importado com sucesso e sincronizado!");
-                            return;
-                        }
-                    } catch (err) {}
+                if (/\.(txt|json)$/i.test(file.name)) {
+                    let dadosImportados;
+                    try { dadosImportados = JSON.parse(texto); }
+                    catch (err) { alert('O arquivo não contém JSON válido.'); return; }
+                    if (!validarBanco(dadosImportados)) { alert('Backup inválido: estrutura incompleta ou referências de veículo inexistentes.'); return; }
+                    if (!confirm('Este backup substituirá todos os dados atuais. Deseja continuar?')) return;
+                    db = dadosImportados;
+                    salvarDB(); inicializarApp();
+                    alert('Banco de dados importado com sucesso.');
+                    return;
                 }
 
-                const linhas = texto.split(/\r\n|\n/);
+                const linhas = texto.split(/\r\n|\n/).filter(l => l.trim());
+                if (!linhas.length) { alert("Arquivo vazio."); return; }
+                const delimitador = (linhas[0].match(/;/g) || []).length >= (linhas[0].match(/,/g) || []).length ? ';' : ',';
+                const cabecalho = csvParseLinha(linhas[0], delimitador).map(x => x.trim().toLowerCase());
+                const pos = nome => cabecalho.findIndex(x => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '').includes(nome));
+                const idxData = pos('data'), idxOdo = pos('odometro'), idxLitros = pos('litros'), idxValor = pos('valortotal'), idxPosto = pos('posto'), idxHora = pos('hora');
+                if ([idxData, idxOdo, idxLitros, idxValor].some(i => i < 0)) { alert('Cabeçalhos não reconhecidos. Use Data, Odômetro, Litros e Valor Total.'); return; }
                 let importadosCont = 0;
                 let idVeiculoTarget = db.veiculoAtivoId;
-
-                linhas.forEach((linha, idx) => {
-                    if (idx === 0 || !linha.trim()) return;
-                    
-                    const colunas = linha.split(/,|;/);
-                    if (colunas.length >= 4) {
-                        const dataVal = colunas[0]?.trim() || new Date().toISOString().split('T')[0];
-                        const odoVal = parseInt(colunas[1]) || 0;
-                        const litrosVal = parseFloat(colunas[2]) || 0;
-                        const valorVal = parseFloat(colunas[3]) || 0;
-                        const postoVal = colunas[4] ? colunas[4].replace(/"/g, '').trim() : 'Posto Importado';
-
-                        if (litrosVal > 0 || valorVal > 0) {
-                            db.abastecimentos.unshift({
-                                id: Date.now() + Math.floor(Math.random() * 1000),
-                                veiculoId: idVeiculoTarget,
-                                data: dataVal,
-                                hora: "12:00",
-                                odometro: odoVal,
-                                litros: litrosVal,
-                                valorTotal: valorVal,
-                                posto: postoVal
-                            });
-
-                            if (postoVal && !db.locais.some(l => l.nome.toLowerCase() === postoVal.toLowerCase())) {
-                                db.locais.unshift({
-                                    id: Date.now() + Math.floor(Math.random() * 10000),
-                                    nome: postoVal,
-                                    tipo: 'posto'
-                                });
-                            }
-
-                            importadosCont++;
-                        }
-                    }
-                });
+                for (const linha of linhas.slice(1)) {
+                    const colunas = csvParseLinha(linha, delimitador);
+                    const numero = valor => { const texto = String(valor || '').trim(); return Number(texto.includes(',') ? texto.replace(/\./g, '').replace(',', '.') : texto) || 0; };
+                    const dataVal = colunas[idxData]?.trim() || dataLocalISO();
+                    const odoVal = numero(colunas[idxOdo]);
+                    const litrosVal = numero(colunas[idxLitros]);
+                    const valorVal = numero(colunas[idxValor]);
+                    const postoVal = idxPosto >= 0 ? colunas[idxPosto].trim() : 'Posto Importado';
+                    if (litrosVal <= 0 || valorVal < 0 || odoVal < 0) continue;
+                    db.abastecimentos.unshift({ id: Date.now() + Math.floor(Math.random() * 100000), veiculoId: idVeiculoTarget, data: dataVal, hora: idxHora >= 0 ? colunas[idxHora] : '12:00', odometro: odoVal, litros: litrosVal, valorTotal: valorVal, posto: postoVal, tanqueCheio: true });
+                    if (postoVal && !db.locais.some(l => l.nome.toLowerCase() === postoVal.toLowerCase())) db.locais.unshift({ id: Date.now() + Math.floor(Math.random() * 100000), nome: postoVal, tipo: 'posto' });
+                    importadosCont++;
+                }
 
                 if (importadosCont > 0) {
                     salvarDB();
@@ -600,13 +628,13 @@
                 const avisos = db.avisos.filter(av => av.veiculoId === veiculo.id);
 
                 htmlTable += '<hr><br>';
-                htmlTable += '<h2>VEÍCULO: ' + veiculo.nome + ' (' + veiculo.placa + ')</h2>';
+                htmlTable += '<h2>VEÍCULO: ' + esc(veiculo.nome) + ' (' + esc(veiculo.placa) + ')</h2>';
                 htmlTable += '<table border="1" style="background-color: #f3f4f6;">';
                 htmlTable += '<tr><th>Nome</th><th>Tipo</th><th>Placa</th><th>Modelo</th><th>Odômetro Atual (km)</th><th>Calibragem</th></tr>';
-                htmlTable += '<tr><td>' + veiculo.nome + '</td><td>' + veiculo.tipo + '</td><td>' + veiculo.placa + '</td><td>' + veiculo.modelo + '</td><td>' + veiculo.odometro + '</td><td>' + (veiculo.calibragem || '') + '</td></tr>';
+                htmlTable += '<tr><td>' + esc(veiculo.nome) + '</td><td>' + esc(veiculo.tipo) + '</td><td>' + esc(veiculo.placa) + '</td><td>' + esc(veiculo.modelo) + '</td><td>' + veiculo.odometro + '</td><td>' + esc(veiculo.calibragem || '') + '</td></tr>';
                 htmlTable += '</table><br>';
 
-                htmlTable += '<h4>Abastecimentos (' + veiculo.nome + ')</h4>';
+                htmlTable += '<h4>Abastecimentos (' + esc(veiculo.nome) + ')</h4>';
                 htmlTable += '<table border="1">';
                 htmlTable += '<tr><th>Data</th><th>Hora</th><th>Odômetro (km)</th><th>Litros</th><th>Valor Total (R$)</th><th>Posto</th></tr>';
                 
@@ -614,12 +642,12 @@
                     htmlTable += '<tr><td colspan="6">Nenhum abastecimento registrado.</td></tr>';
                 } else {
                     abasts.forEach(a => {
-                        htmlTable += '<tr><td>' + a.data + '</td><td>' + a.hora + '</td><td>' + a.odometro + '</td><td>' + a.litros + '</td><td>' + a.valorTotal + '</td><td>' + (a.posto || '') + '</td></tr>';
+                        htmlTable += '<tr><td>' + esc(a.data) + '</td><td>' + esc(a.hora) + '</td><td>' + a.odometro + '</td><td>' + a.litros + '</td><td>' + a.valorTotal + '</td><td>' + esc(a.posto || '') + '</td></tr>';
                     });
                 }
                 htmlTable += '</table><br>';
 
-                htmlTable += '<h4>Manutenções (' + veiculo.nome + ')</h4>';
+                htmlTable += '<h4>Manutenções (' + esc(veiculo.nome) + ')</h4>';
                 htmlTable += '<table border="1">';
                 htmlTable += '<tr><th>Data</th><th>Odômetro (km)</th><th>Oficina</th><th>Serviços / Peças</th><th>Valor Total (R$)</th></tr>';
                 
@@ -628,13 +656,13 @@
                 } else {
                     manuts.forEach(m => {
                         let totalM = m.itens.reduce((acc, i) => acc + i.valor, 0);
-                        let itensStr = m.itens.map(i => i.nome + ' (R$ ' + i.valor.toFixed(2) + ')').join('; ');
-                        htmlTable += '<tr><td>' + m.data + '</td><td>' + m.odometro + '</td><td>' + m.oficina + '</td><td>' + itensStr + '</td><td>' + totalM + '</td></tr>';
+                        let itensStr = m.itens.map(i => esc(i.nome) + ' (R$ ' + i.valor.toFixed(2) + ')').join('; ');
+                        htmlTable += '<tr><td>' + esc(m.data) + '</td><td>' + m.odometro + '</td><td>' + esc(m.oficina) + '</td><td>' + esc(itensStr) + '</td><td>' + totalM + '</td></tr>';
                     });
                 }
                 htmlTable += '</table><br>';
 
-                htmlTable += '<h4>Avisos & Preventivas (' + veiculo.nome + ')</h4>';
+                htmlTable += '<h4>Avisos & Preventivas (' + esc(veiculo.nome) + ')</h4>';
                 htmlTable += '<table border="1">';
                 htmlTable += '<tr><th>Título do Aviso</th><th>Tipo</th><th>Limite (km ou Data)</th><th>Recorrência</th><th>Status</th></tr>';
                 
@@ -643,7 +671,7 @@
                 } else {
                     avisos.forEach(av => {
                         let valLimite = av.tipo === 'data' ? (av.limiteData || '') : (av.limite + ' km');
-                        htmlTable += '<tr><td>' + av.titulo + '</td><td>' + (av.tipo || 'km') + '</td><td>' + valLimite + '</td><td>' + (av.recorrência || av.recorrencia || 'Nenhuma') + '</td><td>' + av.status + '</td></tr>';
+                        htmlTable += '<tr><td>' + esc(av.titulo) + '</td><td>' + esc(av.tipo || 'km') + '</td><td>' + esc(valLimite) + '</td><td>' + escesc(av.recorrencia || 'Nenhuma') + '</td><td>' + esc(av.status) + '</td></tr>';
                     });
                 }
                 htmlTable += '</table><br><br>';
@@ -656,7 +684,7 @@
                 htmlTable += '<tr><td colspan="2">Nenhum local cadastrado.</td></tr>';
             } else {
                 db.locais.forEach(l => {
-                    htmlTable += '<tr><td>' + l.nome + '</td><td>' + l.tipo.toUpperCase() + '</td></tr>';
+                    htmlTable += '<tr><td>' + esc(l.nome) + '</td><td>' + esc(l.tipo.toUpperCase()) + '</td></tr>';
                 });
             }
             htmlTable += '</table>';
@@ -675,19 +703,13 @@
         function exportarCSV() {
             const veiculo = db.veiculos.find(v => v.id === db.veiculoAtivoId) || db.veiculos[0];
             const abasts = db.abastecimentos.filter(a => a.veiculoId === veiculo.id);
-            
-            let csvContent = "data:text/csv;charset=utf-8,ID,Data,Hora,Odometro(km),Litros,ValorTotal(R$),Posto\r\n";
-            abasts.forEach(a => {
-                csvContent += a.id + "," + a.data + "," + a.hora + "," + a.odometro + "," + a.litros + "," + a.valorTotal + ",\"" + (a.posto || '') + "\"\r\n";
-            });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "drivestats_" + veiculo.nome.replace(/\s+/g, '_') + "_abastecimentos.csv");
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            const campo = valor => { let texto = String(valor ?? ''); if (/^[\s]*[=+@-]/.test(texto)) texto = "'" + texto; return `"${texto.replace(/"/g, '""')}"`; };
+            const linhas = [['Data','Hora','Odômetro','Litros','Valor Total','Posto'], ...abasts.map(a => [a.data,a.hora,a.odometro,a.litros,a.valorTotal,a.posto || ''])];
+            const csv = '\uFEFF' + linhas.map(row => row.map(campo).join(';')).join('\r\n');
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+            link.download = 'drivestats_' + veiculo.nome.replace(/\s+/g, '_') + '_abastecimentos.csv';
+            document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(link.href);
         }
 
         function exportarExcelCompleto() {
@@ -698,11 +720,11 @@
 
             let htmlTable = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
             htmlTable += '<head><meta charset="UTF-8"></head><body>';
-            htmlTable += '<h2>Relatório Completo: ' + veiculo.nome + '</h2>';
+            htmlTable += '<h2>Relatório Completo: ' + esc(veiculo.nome) + '</h2>';
             htmlTable += '<h3>1. Dados do Veículo</h3>';
             htmlTable += '<table border="1">';
             htmlTable += '<tr><th>Nome</th><th>Tipo</th><th>Placa</th><th>Modelo</th><th>Odômetro Atual (km)</th><th>Calibragem</th></tr>';
-            htmlTable += '<tr><td>' + veiculo.nome + '</td><td>' + veiculo.tipo + '</td><td>' + veiculo.placa + '</td><td>' + veiculo.modelo + '</td><td>' + veiculo.odometro + '</td><td>' + (veiculo.calibragem || '') + '</td></tr>';
+            htmlTable += '<tr><td>' + esc(veiculo.nome) + '</td><td>' + esc(veiculo.tipo) + '</td><td>' + esc(veiculo.placa) + '</td><td>' + esc(veiculo.modelo) + '</td><td>' + veiculo.odometro + '</td><td>' + esc(veiculo.calibragem || '') + '</td></tr>';
             htmlTable += '</table><br>';
 
             htmlTable += '<h3>2. Histórico de Abastecimentos</h3>';
@@ -710,7 +732,7 @@
             htmlTable += '<tr><th>Data</th><th>Hora</th><th>Odômetro (km)</th><th>Litros</th><th>Valor Total (R$)</th><th>Posto</th></tr>';
             
             abasts.forEach(a => {
-                htmlTable += '<tr><td>' + a.data + '</td><td>' + a.hora + '</td><td>' + a.odometro + '</td><td>' + a.litros + '</td><td>' + a.valorTotal + '</td><td>' + (a.posto || '') + '</td></tr>';
+                htmlTable += '<tr><td>' + esc(a.data) + '</td><td>' + esc(a.hora) + '</td><td>' + a.odometro + '</td><td>' + a.litros + '</td><td>' + a.valorTotal + '</td><td>' + esc(a.posto || '') + '</td></tr>';
             });
             htmlTable += '</table><br>';
 
@@ -720,8 +742,8 @@
             
             manuts.forEach(m => {
                 let totalM = m.itens.reduce((acc, i) => acc + i.valor, 0);
-                let itensStr = m.itens.map(i => i.nome + ' (R$ ' + i.valor.toFixed(2) + ')').join('; ');
-                htmlTable += '<tr><td>' + m.data + '</td><td>' + m.odometro + '</td><td>' + m.oficina + '</td><td>' + itensStr + '</td><td>' + totalM + '</td></tr>';
+                let itensStr = m.itens.map(i => esc(i.nome) + ' (R$ ' + i.valor.toFixed(2) + ')').join('; ');
+                htmlTable += '<tr><td>' + esc(m.data) + '</td><td>' + m.odometro + '</td><td>' + esc(m.oficina) + '</td><td>' + esc(itensStr) + '</td><td>' + totalM + '</td></tr>';
             });
             htmlTable += '</table><br>';
 
@@ -731,7 +753,7 @@
             
             avisos.forEach(av => {
                 let valLimite = av.tipo === 'data' ? (av.limiteData || '') : (av.limite + ' km');
-                htmlTable += '<tr><td>' + av.titulo + '</td><td>' + (av.tipo || 'km') + '</td><td>' + valLimite + '</td><td>' + (av.recorrencia || 'Nenhuma') + '</td><td>' + av.status + '</td></tr>';
+                htmlTable += '<tr><td>' + esc(av.titulo) + '</td><td>' + esc(av.tipo || 'km') + '</td><td>' + esc(valLimite) + '</td><td>' + esc(av.recorrencia || 'Nenhuma') + '</td><td>' + esc(av.status) + '</td></tr>';
             });
             htmlTable += '</table></body></html>';
 
@@ -793,10 +815,10 @@
                             <span class="text-emerald-400 text-sm"><i class="fa-solid ${icone}"></i></span>
                             <div>
                                 <p class="font-bold text-white flex items-center gap-2">
-                                    ${v.nome} 
+                                    ${esc(v.nome)} 
                                     ${eAtivo ? '<span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/30">Ativo</span>' : ''}
                                 </p>
-                                <p class="text-gray-400">${v.modelo} • ${v.placa} • ${v.odometro.toLocaleString()} km</p>
+                                <p class="text-gray-400">${esc(v.modelo)} • ${esc(v.placa)} • ${v.odometro.toLocaleString()} km</p>
                             </div>
                         </div>
                         <div class="flex gap-1">
@@ -846,13 +868,13 @@
                 banner.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
-                            <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full"><i class="fa-solid ${iconeTipo}"></i> ${veiculo.tipo}</span>
-                            <h2 class="text-lg font-extrabold text-white mt-1">${veiculo.nome}</h2>
-                            <p class="text-xs text-gray-400">${veiculo.modelo} • Placa: <span class="text-gray-200 font-mono">${veiculo.placa}</span></p>
+                            <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full"><i class="fa-solid ${iconeTipo}"></i> ${esc(veiculo.tipo)}</span>
+                            <h2 class="text-lg font-extrabold text-white mt-1">${esc(veiculo.nome)}</h2>
+                            <p class="text-xs text-gray-400">${esc(veiculo.modelo)} • Placa: <span class="text-gray-200 font-mono">${esc(veiculo.placa)}</span></p>
                         </div>
                         <div class="text-right">
                             <span class="text-xs text-gray-400 block">Calibragem</span>
-                            <span class="text-sm font-bold text-emerald-400"><i class="fa-solid fa-gauge"></i> ${veiculo.calibragem || 'N/D'}</span>
+                            <span class="text-sm font-bold text-emerald-400"><i class="fa-solid fa-gauge"></i> ${esc(veiculo.calibragem || 'N/D')}</span>
                         </div>
                     </div>
                 `;
@@ -871,11 +893,14 @@
 
             let mediaConsumo = 0;
             let abastsOrdenadosKm = [...abasts].sort((a,b) => a.odometro - b.odometro);
-            if (abastsOrdenadosKm.length > 1) {
-                let kmRodados = abastsOrdenadosKm[abastsOrdenadosKm.length - 1].odometro - abastsOrdenadosKm[0].odometro;
-                let litrosTotais = abastsOrdenadosKm.slice(1).reduce((acc, curr) => acc + curr.litros, 0);
-                if(litrosTotais > 0) mediaConsumo = kmRodados / litrosTotais;
+            let intervalosCheios = [];
+            for (let i = 1; i < abastsOrdenadosKm.length; i++) {
+                const anterior = abastsOrdenadosKm[i - 1], atual = abastsOrdenadosKm[i];
+                if (anterior.tanqueCheio !== false && atual.tanqueCheio !== false && atual.odometro > anterior.odometro && atual.litros > 0) intervalosCheios.push({ km: atual.odometro - anterior.odometro, litros: atual.litros });
             }
+            const kmCheios = intervalosCheios.reduce((s, r) => s + r.km, 0);
+            const litrosCheios = intervalosCheios.reduce((s, r) => s + r.litros, 0);
+            if (litrosCheios > 0) mediaConsumo = kmCheios / litrosCheios;
             document.getElementById('statMediaConsumo').textContent = mediaConsumo.toFixed(1) + ' km/L';
 
             renderizarAlertasDestaque(avisos, veiculo.odometro);
@@ -939,8 +964,8 @@
                     lista.innerHTML += `
                         <div class="border ${corBorda} p-3 rounded-xl flex justify-between items-center text-xs">
                             <div>
-                                <p class="font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ${av.titulo} ${av.recorrencia && av.recorrencia !== 'nenhuma' ? `<span class='opacity-70 font-normal'>(${av.recorrencia})</span>` : ''}</p>
-                                <p class="text-gray-300 mt-0.5">Tipo: ${av.tipo === 'data' ? 'Por Data (' + av.limiteData + ')' : 'Por Quilometragem (' + av.limite.toLocaleString() + ' km)'}</p>
+                                <p class="font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ${esc(av.titulo)} ${av.recorrencia && av.recorrencia !== 'nenhuma' ? `<span class='opacity-70 font-normal'>(${esc(av.recorrencia)})</span>` : ''}</p>
+                                <p class="text-gray-300 mt-0.5">Tipo: ${av.tipo === 'data' ? 'Por Data (' + esc(av.limiteData) + ')' : 'Por Quilometragem (' + esc(av.limite.toLocaleString()) + ' km)'}</p>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="font-extrabold px-2 py-1 rounded bg-black/40 text-[11px]">${statusTxt}</span>
@@ -957,24 +982,24 @@
         function concluirAviso(id) {
             let av = db.avisos.find(a => a.id === id);
             if (!av) return;
-
             if (av.recorrencia && av.recorrencia !== 'nenhuma' && av.tipo === 'data' && av.limiteData) {
-                let d = new Date(av.limiteData + 'T00:00:00');
-                if (av.recorrencia === 'mensal') d.setMonth(d.getMonth() + 1);
-                else if (av.recorrencia === 'bimestral') d.setMonth(d.getMonth() + 2);
-                else if (av.recorrencia === 'trimestral') d.setMonth(d.getMonth() + 3);
-                else if (av.recorrencia === 'semestral') d.setMonth(d.getMonth() + 6);
-                else if (av.recorrencia === 'anual') d.setFullYear(d.getFullYear() + 1);
-
-                av.limiteData = d.toISOString().split('T')[0];
-                alert(`Aviso renovado automaticamente para o próximo ciclo: ${av.limiteData}`);
-            } else {
-                if (confirm("Deseja marcar este aviso como concluído e removê-lo?")) {
-                    db.avisos = db.avisos.filter(a => a.id !== id);
-                }
-            }
-            salvarDB();
-            renderizarApp();
+                const meses = { mensal: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12 }[av.recorrencia] || 0;
+                const base = new Date(av.limiteData + 'T00:00:00');
+                const proximo = new Date(); proximo.setHours(0,0,0,0);
+                if (base > proximo) proximo.setTime(base.getTime());
+                do {
+                    const dia = proximo.getDate();
+                    proximo.setDate(1);
+                    proximo.setMonth(proximo.getMonth() + meses);
+                    const ultimoDia = new Date(proximo.getFullYear(), proximo.getMonth() + 1, 0).getDate();
+                    proximo.setDate(Math.min(dia, ultimoDia));
+                } while (proximo <= new Date());
+                av.limiteData = dataLocalISO(proximo);
+                alert(`Aviso renovado automaticamente para: ${esc(av.limiteData)}`);
+            } else if (confirm("Deseja marcar este aviso como concluído e removê-lo?")) {
+                db.avisos = db.avisos.filter(a => a.id !== id);
+            } else return;
+            salvarDB(); renderizarApp();
         }
 
         function renderizarPrevisaoAbastecimento(abasts, odometroAtual) {
@@ -987,6 +1012,9 @@
             }
 
             let sorted = [...abasts].sort((a,b) => new Date(a.data) - new Date(b.data));
+            const corte = new Date(); corte.setDate(corte.getDate() - 90);
+            const recentes = sorted.filter(a => new Date(a.data + 'T00:00:00') >= corte);
+            if (recentes.length >= 2) sorted = recentes;
             let primeiro = sorted[0];
             let ultimo = sorted[sorted.length - 1];
 
@@ -1047,7 +1075,7 @@
                     if (idxOriginal > 0) {
                         let abastAnterior = abastsCronologicos[idxOriginal - 1];
                         let kmRodados = a.odometro - abastAnterior.odometro;
-                        if (kmRodados > 0 && a.litros > 0) {
+                        if (kmRodados > 0 && a.litros > 0 && abastAnterior.tanqueCheio !== false && a.tanqueCheio !== false) {
                             let consumoKmPorL = kmRodados / a.litros;
                             badgeConsumo = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-extrabold text-[11px] ml-2"><i class="fa-solid fa-gauge-high mr-0.5"></i> ${consumoKmPorL.toFixed(1)} km/L</span>`;
                         }
@@ -1059,10 +1087,10 @@
                         <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
                             <div>
                                 <p class="font-bold text-white flex items-center flex-wrap gap-1">
-                                    <span><i class="fa-solid fa-gas-pump text-emerald-400 mr-1"></i> ${a.litros} L - R$ ${a.valorTotal.toFixed(2)}</span>
+                                    <span><i class="fa-solid fa-gas-pump text-emerald-400 mr-1"></i> ${esc(a.litros)} L - R$ ${esc(a.valorTotal.toFixed(2))}</span>
                                     ${badgeConsumo}
                                 </p>
-                                <p class="text-gray-400 mt-0.5">${a.data} às ${a.hora} • ${a.odometro.toLocaleString()} km • ${a.posto || 'Posto não informado'}</p>
+                                <p class="text-gray-400 mt-0.5">${esc(a.data)} às ${esc(a.hora)} • ${a.odometro.toLocaleString()} km • ${esc(a.posto || 'Posto não informado')}</p>
                             </div>
                             <div class="flex gap-1">
                                 <button onclick="abrirModalAbastecimento(${a.id})" class="text-gray-400 hover:text-emerald-400 p-2"><i class="fa-solid fa-pen"></i></button>
@@ -1085,8 +1113,8 @@
                     divManut.innerHTML += `
                         <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
                             <div>
-                                <p class="font-bold text-white"><i class="fa-solid fa-wrench text-blue-400 mr-1"></i> ${m.oficina} - R$ ${totalM.toFixed(2)}</p>
-                                <p class="text-gray-400">${m.data} • ${m.odometro.toLocaleString()} km • ${itensStr}</p>
+                                <p class="font-bold text-white"><i class="fa-solid fa-wrench text-blue-400 mr-1"></i> ${esc(m.oficina)} - R$ ${totalM.toFixed(2)}</p>
+                                <p class="text-gray-400">${esc(m.data)} • ${esc(m.odometro.toLocaleString())} km • ${esc(itensStr)}</p>
                             </div>
                             <div class="flex gap-1">
                                 <button onclick="abrirModalManutencao(${m.id})" class="text-gray-400 hover:text-blue-400 p-2"><i class="fa-solid fa-pen"></i></button>
@@ -1101,12 +1129,12 @@
             if (divAvisos) {
                 divAvisos.innerHTML = avisos.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhum aviso ativo.</p>';
                 avisos.forEach(av => {
-                    let detalhe = av.tipo === 'data' ? `Vencimento: ${av.limiteData} (${av.recorrencia || 'nenhuma'})` : `Limite: ${av.limite.toLocaleString()} km`;
+                    let detalhe = av.tipo === 'data' ? `Vencimento: ${esc(av.limiteData)} (${esc(av.recorrencia || 'nenhuma')})` : `Limite: ${esc(av.limite.toLocaleString())} km`;
                     divAvisos.innerHTML += `
                         <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
                             <div>
-                                <p class="font-bold text-yellow-400"><i class="fa-solid fa-bell mr-1"></i> ${av.titulo}</p>
-                                <p class="text-gray-400">${detalhe}</p>
+                                <p class="font-bold text-yellow-400"><i class="fa-solid fa-bell mr-1"></i> ${esc(av.titulo)}</p>
+                                <p class="text-gray-400">${esc(detalhe)}</p>
                             </div>
                             <div class="flex gap-1">
                                 <button onclick="abrirModalAviso(${av.id})" class="text-gray-400 hover:text-yellow-400 p-2"><i class="fa-solid fa-pen"></i></button>
@@ -1125,8 +1153,10 @@
                     divLocais.innerHTML += `
                         <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
                             <div>
-                                <p class="font-bold text-white"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i> ${l.nome}</p>
-                                <p class="text-gray-400 uppercase">Tipo: ${l.tipo}</p>
+                                <p class="font-bold text-white"><i class="fa-solid fa-location-dot text-red-400 mr-1"></i> ${esc(l.nome)}</p>
+                                <p class="text-gray-400 uppercase">Tipo: ${esc(l.tipo)}</p>
+                                ${l.endereco ? `<p class="text-gray-400 mt-1">${esc(l.endereco)}</p>` : ''}
+                                ${Number.isFinite(Number(l.latitude)) && Number.isFinite(Number(l.longitude)) ? `<p class="text-gray-500 mt-0.5">GPS: ${esc(Number(l.latitude).toFixed(5))}, ${esc(Number(l.longitude).toFixed(5))}</p>` : ''}
                             </div>
                             <div class="flex gap-1">
                                 <button onclick="abrirModalLocal(${l.id})" class="text-gray-400 hover:text-red-400 p-2"><i class="fa-solid fa-pen"></i></button>
@@ -1150,8 +1180,8 @@
                 data: {
                     labels: abasts.map(a => a.data),
                     datasets: [{
-                        label: 'Litros Abastecidos',
-                        data: abasts.map(a => a.litros),
+                        label: 'Consumo (km/L)',
+                        data: abasts.map((a, i) => i === 0 || a.tanqueCheio === false || abasts[i - 1].tanqueCheio === false ? null : ((a.odometro - abasts[i - 1].odometro) / a.litros)).map(v => v == null || !Number.isFinite(v) || v <= 0 ? null : Number(v.toFixed(2))),
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         fill: true,
@@ -1173,18 +1203,23 @@
         function excluirRegistro(colecao, id) {
             if(confirm("Deseja realmente excluir este item?")) {
                 db[colecao] = db[colecao].filter(item => item.id !== id);
+                const v = db.veiculos.find(item => item.id === db.veiculoAtivoId);
+                if (v && ['abastecimentos', 'manutencoes'].includes(colecao)) {
+                    const registros = [...db.abastecimentos, ...db.manutencoes].filter(r => r.veiculoId === v.id);
+                    v.odometro = Math.max(0, ...registros.map(r => Number(r.odometro) || 0));
+                }
                 salvarDB();
                 renderizarApp();
             }
         }
 
         // FUNÇÃO AUXILIAR DE VALIDAÇÃO DE ODÔMETRO
-        function validarOdodmetroNovo(veiculoId, novoOdometro, dataLancamento, idAtualExcecao = null) {
-            const hojeStr = new Date().toISOString().split('T')[0];
+        function validarOdodmetroNovo(veiculoId, novoOdometro, dataLancamento, colecaoAtual = null, idAtualExcecao = null) {
+            const hojeStr = dataLocalISO();
             
             // Junta todos os registros do veículo (abastecimentos e manutenções) para achar o mais novo
-            const abasts = db.abastecimentos.filter(a => a.veiculoId === veiculoId && a.id !== idAtualExcecao);
-            const manuts = db.manutencoes.filter(m => m.veiculoId === veiculoId && m.id !== idAtualExcecao);
+            const abasts = db.abastecimentos.filter(a => a.veiculoId === veiculoId && !(colecaoAtual === 'abastecimentos' && a.id === idAtualExcecao));
+            const manuts = db.manutencoes.filter(m => m.veiculoId === veiculoId && !(colecaoAtual === 'manutencoes' && m.id === idAtualExcecao));
             const todosRegistros = [...abasts, ...manuts];
 
             if (todosRegistros.length === 0) return { valido: true };
@@ -1224,7 +1259,7 @@
             
             document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-emerald-400"></i> Editar Veículo' : '<i class="fa-solid fa-car text-emerald-400"></i> Novo Veículo';
             document.getElementById('modalCorpo').innerHTML = `
-                <div><label class="text-xs text-gray-400">Nome do Veículo</label><input id="inpNome" value="${item.nome}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div><label class="text-xs text-gray-400">Nome do Veículo</label><input id="inpNome" value="${esc(item.nome)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
                 <div class="grid grid-cols-2 gap-2">
                     <div><label class="text-xs text-gray-400">Tipo</label>
                         <select id="inpTipo" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
@@ -1232,13 +1267,13 @@
                             <option value="moto" ${item.tipo === 'moto' ? 'selected' : ''}>Moto</option>
                         </select>
                     </div>
-                    <div><label class="text-xs text-gray-400">Placa</label><input id="inpPlaca" value="${item.placa}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Placa</label><input id="inpPlaca" value="${esc(item.placa)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs text-gray-400">Modelo/Ano</label><input id="inpModelo" value="${item.modelo}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Modelo/Ano</label><input id="inpModelo" value="${esc(item.modelo)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
                     <div><label class="text-xs text-gray-400">Odômetro (km)</label><input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
                 </div>
-                <div><label class="text-xs text-gray-400">Calibragem Recomendada</label><input id="inpCalibragem" value="${item.calibragem}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div><label class="text-xs text-gray-400">Calibragem Recomendada</label><input id="inpCalibragem" value="${esc(item.calibragem)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
             `;
 
             document.getElementById('modalBtnSalvar').onclick = () => {
@@ -1277,25 +1312,25 @@
                     document.getElementById('inpValor').value = (litros * preco).toFixed(2);
                 }
             } else if (campo === 'total') {
-                if (total > 0 && preco > 0) {
-                    document.getElementById('inpLitros').value = (total / preco).toFixed(2);
-                } else if (total > 0 && litros > 0) {
+                if (total > 0 && litros > 0) {
                     document.getElementById('inpPrecoLitro').value = (total / litros).toFixed(3);
+                } else if (total > 0 && preco > 0) {
+                    document.getElementById('inpLitros').value = (total / preco).toFixed(2);
                 }
             }
         }
 
         function abrirModalAbastecimento(id = null) {
             const item = id ? db.abastecimentos.filter(a => a.id === id)[0] : { 
-                litros: 40, valorTotal: 200, odometro: 0, 
-                data: new Date().toISOString().split('T')[0], 
-                hora: new Date().toLocaleTimeString().slice(0,5), 
+                litros: '', valorTotal: '', odometro: (db.veiculos.find(v => v.id === db.veiculoAtivoId)?.odometro || 0), 
+                data: dataLocalISO(), 
+                hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false }), 
                 posto: '' 
             };
 
             let precoInicial = (item.litros > 0 && item.valorTotal > 0) ? (item.valorTotal / item.litros).toFixed(3) : '';
             let postosCadastrados = db.locais.filter(l => l.tipo === 'posto');
-            let optionsPostos = postosCadastrados.map(p => `<option value="${p.nome}" ${item.posto === p.nome ? 'selected' : ''}>${p.nome}</option>`).join('');
+            let optionsPostos = postosCadastrados.map(p => `<option value="${esc(p.nome)}" ${item.posto === p.nome ? 'selected' : ''}>${esc(p.nome)}</option>`).join('');
 
             document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-emerald-400"></i> Editar Abastecimento' : '<i class="fa-solid fa-gas-pump text-emerald-400"></i> Novo Abastecimento';
             document.getElementById('modalCorpo').innerHTML = `
@@ -1320,9 +1355,10 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${item.data}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                    <div><label class="text-xs text-gray-400">Hora</label><input id="inpHora" type="time" value="${item.hora}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${esc(item.data)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Hora</label><input id="inpHora" type="time" value="${esc(item.hora)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
                 </div>
+                <div class="flex items-center gap-2 text-xs text-gray-300"><input id="inpTanqueCheio" type="checkbox" ${item.tanqueCheio !== false ? 'checked' : ''}><label for="inpTanqueCheio">Abastecimento completou o tanque</label></div>
                 <div>
                     <label class="text-xs text-gray-400">Posto de Combustível</label>
                     <select id="inpPosto" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
@@ -1338,7 +1374,7 @@
                 const nomePosto = document.getElementById('inpPosto').value;
 
                 // Validação de Odômetro
-                const validacao = validarOdodmetroNovo(db.veiculoAtivoId, novoOdometro, dataVal, id);
+                const validacao = validarOdodmetroNovo(db.veiculoAtivoId, novoOdometro, dataVal, 'abastecimentos', id);
                 if (!validacao.valido) {
                     alert(validacao.mensagem);
                     return;
@@ -1352,7 +1388,8 @@
                     odometro: novoOdometro,
                     data: dataVal,
                     hora: document.getElementById('inpHora').value,
-                    posto: nomePosto
+                    posto: nomePosto,
+                    tanqueCheio: document.getElementById('inpTanqueCheio').checked
                 };
 
                 if (id) {
@@ -1391,7 +1428,7 @@
                 total += parseFloat(it.valor) || 0;
                 container.innerHTML += `
                     <div class="flex gap-2 items-center mb-2">
-                        <input type="text" value="${it.nome}" oninput="tempManutencaoItens[${idx}].nome = this.value" placeholder="Serviço ou Peça" class="flex-1 bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
+                        <input type="text" value="${esc(it.nome)}" oninput="tempManutencaoItens[${idx}].nome = this.value" placeholder="Serviço ou Peça" class="flex-1 bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
                         <input type="number" step="0.01" value="${it.valor}" oninput="tempManutencaoItens[${idx}].valor = parseFloat(this.value)||0; atualizarTotalManutencaoModal();" placeholder="Valor R$" class="w-28 bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
                         <button onclick="removerItemTempManutencao(${idx})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
                     </div>
@@ -1421,15 +1458,15 @@
 
         function abrirModalManutencao(id = null) {
             const item = id ? db.manutencoes.find(m => m.id === id) : { 
-                oficina: '', odometro: 0, 
-                data: new Date().toISOString().split('T')[0], 
+                oficina: '', odometro: (db.veiculos.find(v => v.id === db.veiculoAtivoId)?.odometro || 0), 
+                data: dataLocalISO(), 
                 itens: [{ nome: '', valor: 0 }] 
             };
 
             tempManutencaoItens = item.itens ? JSON.parse(JSON.stringify(item.itens)) : [{ nome: '', valor: 0 }];
 
             let oficinasCadastradas = db.locais.filter(l => l.tipo === 'oficina');
-            let optionsOficinas = oficinasCadastradas.map(o => `<option value="${o.nome}" ${item.oficina === o.nome ? 'selected' : ''}>${o.nome}</option>`).join('');
+            let optionsOficinas = oficinasCadastradas.map(o => `<option value="${esc(o.nome)}" ${item.oficina === o.nome ? 'selected' : ''}>${esc(o.nome)}</option>`).join('');
 
             document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-blue-400"></i> Editar Manutenção' : '<i class="fa-solid fa-wrench text-blue-400"></i> Nova Manutenção';
             document.getElementById('modalCorpo').innerHTML = `
@@ -1440,9 +1477,10 @@
                         ${optionsOficinas}
                     </select>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-3 gap-2">
                     <div><label class="text-xs text-gray-400">Odômetro (km)</label><input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                    <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${item.data}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${esc(item.data)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Hora</label><input id="inpHora" type="time" value="${esc(item.hora || '')}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
                 </div>
                 <div class="border-t border-gray-800 pt-3">
                     <div class="flex justify-between items-center mb-2">
@@ -1467,7 +1505,7 @@
                 const nomeOficina = document.getElementById('inpOficina').value;
 
                 // Validação de Odômetro
-                const validacao = validarOdodmetroNovo(db.veiculoAtivoId, novoOdometro, dataVal, id);
+                const validacao = validarOdodmetroNovo(db.veiculoAtivoId, novoOdometro, dataVal, 'manutencoes', id);
                 if (!validacao.valido) {
                     alert(validacao.mensagem);
                     return;
@@ -1479,6 +1517,7 @@
                     oficina: nomeOficina,
                     odometro: novoOdometro,
                     data: dataVal,
+                    hora: document.getElementById('inpHora')?.value || item.hora || '',
                     itens: tempManutencaoItens.map(it => ({ nome: it.nome, valor: parseFloat(it.valor) || 0 }))
                 };
 
@@ -1497,6 +1536,8 @@
                     });
                 }
 
+                const v = db.veiculos.find(ve => ve.id === db.veiculoAtivoId);
+                if (v && novoOdometro > v.odometro) v.odometro = novoOdometro;
                 salvarDB();
                 fecharModal();
                 renderizarApp();
@@ -1525,7 +1566,7 @@
         function abrirModalAviso(id = null) {
             const item = id ? db.avisos.find(a => a.id === id) : { 
                 titulo: '', tipo: 'km', limite: 0, 
-                limiteData: new Date().toISOString().split('T')[0], 
+                limiteData: dataLocalISO(), 
                 recorrencia: 'nenhuma', status: 'ativo' 
             };
 
@@ -1535,7 +1576,7 @@
             document.getElementById('modalCorpo').innerHTML = `
                 <div>
                     <label class="text-xs text-gray-400">Título do Aviso / Conta</label>
-                    <input id="inpTitulo" value="${item.titulo}" placeholder="Ex: IPVA, Licenciamento, Troca de Óleo..." class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                    <input id="inpTitulo" value="${esc(item.titulo)}" placeholder="Ex: IPVA, Licenciamento, Troca de Óleo..." class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
                 </div>
                 <div>
                     <label class="text-xs text-gray-400">Tipo de Alerta</label>
@@ -1546,11 +1587,11 @@
                 </div>
                 <div id="blocoKmLimite" class="${tipoAtual === 'data' ? 'hidden' : ''}">
                     <label class="text-xs text-gray-400">Quilometragem Limite (km)</label>
-                    <input id="inpLimiteKm" type="number" value="${item.limite || 0}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                    <input id="inpLimiteKm" type="number" value="${esc(item.limite || 0)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
                 </div>
                 <div id="blocoDataLimite" class="${tipoAtual === 'km' ? 'hidden' : ''}">
                     <label class="text-xs text-gray-400">Data Limite de Vencimento</label>
-                    <input id="inpLimiteData" type="date" value="${item.limiteData || new Date().toISOString().split('T')[0]}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                    <input id="inpLimiteData" type="date" value="${esc(item.limiteData || dataLocalISO())}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
                 </div>
                 <div id="blocoRecorrencia" class="${tipoAtual === 'km' ? 'hidden' : ''}">
                     <label class="text-xs text-gray-400">Repetição / Recorrência</label>
@@ -1594,40 +1635,95 @@
         }
 
         function abrirModalLocal(id = null) {
-            const item = id ? db.locais.find(l => l.id === id) : { nome: '', tipo: 'posto' };
-
+            const item = id ? db.locais.find(l => l.id === id) : { nome: '', tipo: 'posto', endereco: '', latitude: '', longitude: '' };
             document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-red-400"></i> Editar Local' : '<i class="fa-solid fa-location-dot text-red-400"></i> Novo Local';
             document.getElementById('modalCorpo').innerHTML = `
-                <div><label class="text-xs text-gray-400">Nome do Local</label><input id="inpNome" value="${item.nome}" placeholder="Ex: Posto Shell, Oficina Bosch" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div><label class="text-xs text-gray-400">Nome do Local</label><input id="inpNome" value="${esc(item.nome)}" placeholder="Ex: Posto Shell, Oficina Bosch" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
                 <div><label class="text-xs text-gray-400">Tipo</label>
                     <select id="inpTipo" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
                         <option value="posto" ${item.tipo === 'posto' ? 'selected' : ''}>Posto de Combustível</option>
                         <option value="oficina" ${item.tipo === 'oficina' ? 'selected' : ''}>Oficina / Concessionária</option>
                     </select>
                 </div>
+                <div><label class="text-xs text-gray-400">Endereço (opcional)</label><input id="inpEnderecoLocal" value="${esc(item.endereco || '')}" placeholder="Rua, número, bairro, cidade" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <input id="inpLatitudeLocal" type="hidden" value="${esc(item.latitude ?? '')}">
+                <input id="inpLongitudeLocal" type="hidden" value="${esc(item.longitude ?? '')}">
+                <div class="space-y-1">
+                    <button type="button" onclick="sugerirLocalPeloGPS()" id="btnSugerirLocalGPS" class="w-full bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 px-3 py-2 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2"><i class="fa-solid fa-location-crosshairs"></i> Usar GPS para sugerir nome e endereço</button>
+                    <p id="statusGPSLocal" class="text-xs text-gray-400 min-h-4"></p>
+                    <p class="text-[10px] text-gray-500">Ao buscar, suas coordenadas serão enviadas ao OpenStreetMap/Nominatim. O resultado é uma sugestão: confira o local antes de salvar. <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" class="underline">© OpenStreetMap contributors</a>.</p>
+                </div>
             `;
-
             document.getElementById('modalBtnSalvar').onclick = () => {
+                const latitude = document.getElementById('inpLatitudeLocal').value;
+                const longitude = document.getElementById('inpLongitudeLocal').value;
                 const novoObjeto = {
                     id: id || Date.now(),
-                    nome: document.getElementById('inpNome').value,
-                    tipo: document.getElementById('inpTipo').value
+                    nome: document.getElementById('inpNome').value.trim(),
+                    tipo: document.getElementById('inpTipo').value,
+                    endereco: document.getElementById('inpEnderecoLocal').value.trim(),
+                    latitude: latitude === '' ? null : Number(latitude),
+                    longitude: longitude === '' ? null : Number(longitude)
                 };
-
+                if (!novoObjeto.nome) { alert('Informe o nome do posto ou oficina.'); return; }
                 if (id) {
                     const idx = db.locais.findIndex(l => l.id === id);
                     db.locais[idx] = novoObjeto;
-                } else {
-                    db.locais.unshift(novoObjeto);
-                }
-
-                salvarDB();
-                fecharModal();
-                renderizarApp();
+                } else db.locais.unshift(novoObjeto);
+                salvarDB(); fecharModal(); renderizarApp();
             };
-
             document.getElementById('modalForm').classList.remove('hidden');
         }
+
+        async function sugerirLocalPeloGPS() {
+            const status = document.getElementById('statusGPSLocal');
+            const botao = document.getElementById('btnSugerirLocalGPS');
+            if (!navigator.geolocation) { status.textContent = 'Este navegador não disponibiliza GPS.'; return; }
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') { status.textContent = 'O GPS exige que o site seja aberto por HTTPS.'; return; }
+            botao.disabled = true;
+            status.textContent = 'Obtendo a localização…';
+            navigator.geolocation.getCurrentPosition(async posicao => {
+                const latitude = Number(posicao.coords.latitude.toFixed(6));
+                const longitude = Number(posicao.coords.longitude.toFixed(6));
+                const chaveCache = `drivestats_geocode_${latitude.toFixed(4)}_${longitude.toFixed(4)}`;
+                try {
+                    let resultado = null;
+                    try { resultado = JSON.parse(localStorage.getItem(chaveCache) || 'null'); } catch (_) {}
+                    if (!resultado) {
+                        status.textContent = 'Consultando OpenStreetMap…';
+                        const espera = Math.max(0, 1100 - (Date.now() - ultimoAcessoNominatim));
+                        if (espera) await new Promise(resolve => setTimeout(resolve, espera));
+                        ultimoAcessoNominatim = Date.now();
+                        const configResposta = await fetch('geocoder-config.json', { cache: 'no-store' });
+                        if (!configResposta.ok) throw new Error('Configuração do serviço de endereços ausente');
+                        const configGeocoder = await configResposta.json();
+                        const endpoint = new URL(configGeocoder.reverseEndpoint);
+                        if (endpoint.protocol !== 'https:') throw new Error('O serviço de endereço deve usar HTTPS');
+                        const params = new URLSearchParams({ format: 'jsonv2', lat: String(latitude), lon: String(longitude), zoom: '18', addressdetails: '1', namedetails: '1', 'accept-language': 'pt-BR' });
+                        endpoint.search = params.toString();
+                        const resposta = await fetch(endpoint.toString(), { headers: { 'Accept': 'application/json' }, referrerPolicy: 'strict-origin-when-cross-origin' });
+                        if (!resposta.ok) throw new Error('Serviço de endereço indisponível');
+                        resultado = await resposta.json();
+                        if (resultado.error) throw new Error(resultado.error);
+                        try { localStorage.setItem(chaveCache, JSON.stringify(resultado)); } catch (_) {}
+                    }
+                    const endereco = resultado.address || {};
+                    const nomeSugerido = resultado.name || resultado.namedetails?.name || endereco.amenity || endereco.shop || endereco.building || '';
+                    if (nomeSugerido) document.getElementById('inpNome').value = nomeSugerido;
+                    if (resultado.display_name) document.getElementById('inpEnderecoLocal').value = resultado.display_name;
+                    document.getElementById('inpLatitudeLocal').value = latitude;
+                    document.getElementById('inpLongitudeLocal').value = longitude;
+                    status.textContent = nomeSugerido ? 'Sugestão preenchida. Confira o posto/oficina e salve.' : 'Endereço sugerido; nome não encontrado, preencha manualmente.';
+                } catch (erro) {
+                    status.textContent = 'Não foi possível obter o endereço. Você ainda pode preencher os campos manualmente.';
+                } finally { botao.disabled = false; }
+            }, erro => {
+                const mensagens = { 1: 'Permissão de localização negada.', 2: 'Localização indisponível.', 3: 'Tempo esgotado ao obter GPS.' };
+                status.textContent = mensagens[erro.code] || 'Não foi possível obter a localização.';
+                botao.disabled = false;
+            }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+        }
+
     </script>
 </body>
 </html>
