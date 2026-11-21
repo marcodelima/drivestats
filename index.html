@@ -19,13 +19,30 @@
         ::-webkit-scrollbar-track { background: #111827; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        body {
+            padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+        }
+        .bottom-nav-bar {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 40 !important;
+            background-color: #111827 !important;
+            border-top: 1px solid #1f2937 !important;
+            box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.65) !important;
+        }
         .bottom-nav-container {
             display: flex !important;
             flex-direction: row !important;
-            align-items: center !important;
+            align-items: stretch !important;
             justify-content: space-around !important;
             width: 100% !important;
-            padding-bottom: env(safe-area-inset-bottom, 4px) !important;
+            max-width: 64rem;
+            margin: 0 auto;
+            min-height: 54px;
+            padding: 5px 4px calc(5px + env(safe-area-inset-bottom, 0px)) 4px !important;
+            gap: 2px;
         }
         .bottom-nav-btn {
             flex: 1 1 0% !important;
@@ -33,9 +50,60 @@
             flex-direction: column !important;
             align-items: center !important;
             justify-content: center !important;
-            padding: 4px 2px !important;
+            gap: 3px !important;
+            padding: 5px 2px !important;
             min-width: 0 !important;
             text-align: center !important;
+            border-radius: 8px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        .bottom-nav-btn i {
+            font-size: 14px !important;
+            line-height: 1 !important;
+        }
+        .bottom-nav-btn span {
+            font-size: 9.5px !important;
+            line-height: 1.1 !important;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            display: block;
+        }
+        @media (min-width: 640px) {
+            .bottom-nav-btn i {
+                font-size: 16px !important;
+            }
+            .bottom-nav-btn span {
+                font-size: 11px !important;
+            }
+        }
+        .bottom-nav-btn.nav-ativo {
+            background-color: rgba(16, 185, 129, 0.14) !important;
+            color: #34d399 !important;
+        }
+        .modal-dialog-scroll {
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+            max-height: calc(100vh - 28px) !important;
+            max-height: calc(100dvh - 28px) !important;
+            height: auto !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+        }
+        .modal-header-fixed,
+        .modal-footer-fixed {
+            flex-shrink: 0 !important;
+        }
+        .modal-body-scroll {
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
         }
         #conteudoRelatorioTestes::-webkit-scrollbar,
         #drillDownCorpo::-webkit-scrollbar {
@@ -48,7 +116,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans pb-36 sm:pb-44">
+<body class="min-h-screen flex flex-col font-sans pb-20 sm:pb-24">
 
     <!-- CABEÇALHO -->
     <header class="bg-gray-900 border-b border-gray-800 sticky top-0 z-40 px-4 py-3 shadow-md">
@@ -956,45 +1024,42 @@
 
         </div>
 
-        <!-- ESPAÇADOR DE SEGURANÇA PARA O MENU INFERIOR FIXO (EVITA QUE A BARRA CUBRA O ÚLTIMO ITEM) -->
-        <div class="h-28 sm:h-36 w-full block pointer-events-none" aria-hidden="true"></div>
-
     </main>
 
     <!-- MENU INFERIOR FIXO (8 ABAS RESPONSIVAS HORIZONTAIS) -->
-    <nav class="bg-gray-900 border-t border-gray-800 fixed bottom-0 left-0 right-0 z-40 shadow-2xl">
-        <div class="max-w-5xl mx-auto bottom-nav-container py-1.5 text-center text-[9px] sm:text-[10px]">
-            <button onclick="mudarAba('VisaoGeral')" id="btnAbaVisaoGeral" class="bottom-nav-btn text-emerald-400 transition">
-                <i class="fa-solid fa-chart-pie text-base sm:text-lg mb-1"></i>
-                <span class="font-medium leading-none truncate w-full">Resumo</span>
+    <nav class="bottom-nav-bar">
+        <div class="bottom-nav-container">
+            <button onclick="mudarAba('VisaoGeral')" id="btnAbaVisaoGeral" class="bottom-nav-btn nav-ativo text-emerald-400 transition">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span class="font-semibold">Resumo</span>
             </button>
-            <button onclick="mudarAba('Analises')" id="btnAbaAnalises" class="bottom-nav-btn text-gray-400 hover:text-emerald-400 transition">
-                <i class="fa-solid fa-chart-line text-base sm:text-lg mb-1"></i>
-                <span class="font-medium leading-none truncate w-full">Análises</span>
+            <button onclick="mudarAba('Analises')" id="btnAbaAnalises" class="bottom-nav-btn text-gray-400 hover:text-emerald-400 hover:bg-gray-800/60 transition">
+                <i class="fa-solid fa-chart-line"></i>
+                <span class="font-medium">Análises</span>
             </button>
-            <button onclick="mudarAba('Abastecimentos')" id="btnAbaAbastecimentos" class="bottom-nav-btn text-gray-400 hover:text-emerald-400 transition">
-                <i class="fa-solid fa-gas-pump text-base sm:text-lg mb-1"></i>
-                <span class="font-medium leading-none truncate w-full">Postos</span>
+            <button onclick="mudarAba('Abastecimentos')" id="btnAbaAbastecimentos" class="bottom-nav-btn text-gray-400 hover:text-emerald-400 hover:bg-gray-800/60 transition">
+                <i class="fa-solid fa-gas-pump"></i>
+                <span class="font-medium">Postos</span>
             </button>
-            <button onclick="mudarAba('Manutencoes')" id="btnAbaManutencoes" class="bottom-nav-btn text-gray-400 hover:text-blue-400 transition">
-                <i class="fa-solid fa-wrench text-base sm:text-lg mb-1"></i>
-                <span class="font-medium leading-none truncate w-full">Oficina</span>
+            <button onclick="mudarAba('Manutencoes')" id="btnAbaManutencoes" class="bottom-nav-btn text-gray-400 hover:text-blue-400 hover:bg-gray-800/60 transition">
+                <i class="fa-solid fa-wrench"></i>
+                <span class="font-medium">Oficina</span>
             </button>
-            <button onclick="mudarAba('Avisos')" id="btnAbaAvisos" class="bottom-nav-btn text-gray-400 hover:text-yellow-400 transition">
-                <i class="fa-solid fa-bell text-base sm:text-lg mb-1"></i>
-                <span class="font-medium leading-none truncate w-full">Avisos</span>
+            <button onclick="mudarAba('Avisos')" id="btnAbaAvisos" class="bottom-nav-btn text-gray-400 hover:text-yellow-400 hover:bg-gray-800/60 transition">
+                <i class="fa-solid fa-bell"></i>
+                <span class="font-medium">Avisos</span>
             </button>
-            <button onclick="mudarAba('Locais')" id="btnAbaLocais" class="bottom-nav-btn text-gray-400 hover:text-red-400 transition">
-                <i class="fa-solid fa-map-location-dot text-base sm:text-lg mb-1"></i>
-                <span class="font-medium leading-none truncate w-full">Locais</span>
+            <button onclick="mudarAba('Locais')" id="btnAbaLocais" class="bottom-nav-btn text-gray-400 hover:text-red-400 hover:bg-gray-800/60 transition">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <span class="font-medium">Locais</span>
             </button>
-            <button onclick="mudarAba('Ajustes')" id="btnAbaAjustes" class="bottom-nav-btn text-gray-400 hover:text-gray-200 transition">
-                <i class="fa-solid fa-gear text-base sm:text-lg mb-1"></i>
-                <span class="font-medium leading-none truncate w-full">Ajustes</span>
+            <button onclick="mudarAba('Ajustes')" id="btnAbaAjustes" class="bottom-nav-btn text-gray-400 hover:text-gray-200 hover:bg-gray-800/60 transition">
+                <i class="fa-solid fa-gear"></i>
+                <span class="font-medium">Ajustes</span>
             </button>
-            <button onclick="mudarAba('ComoUsar')" id="btnAbaComoUsar" class="bottom-nav-btn text-gray-400 hover:text-emerald-400 transition">
-                <i class="fa-solid fa-circle-question text-base sm:text-lg mb-1"></i>
-                <span class="font-medium leading-none truncate w-full">Como Usar</span>
+            <button onclick="mudarAba('ComoUsar')" id="btnAbaComoUsar" class="bottom-nav-btn text-gray-400 hover:text-emerald-400 hover:bg-gray-800/60 transition">
+                <i class="fa-solid fa-circle-question"></i>
+                <span class="font-medium">Guia</span>
             </button>
         </div>
     </nav>
@@ -1104,25 +1169,25 @@
     </div>
 
     <!-- MODAL DRILL-DOWN: CONSULTAR DADOS QUE ORIGINARAM OS INDICADORES -->
-    <div id="modalDrillDown" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 hidden">
-        <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-4xl h-[88vh] max-h-[88vh] flex flex-col p-4 sm:p-6 shadow-2xl relative overflow-hidden">
-            <div class="flex justify-between items-center pb-3 border-b border-gray-800 flex-shrink-0">
-                <div class="flex items-center gap-3">
-                    <button onclick="fecharModalDrillDown()" class="bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition shadow" title="Voltar">
+    <div id="modalDrillDown" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
+        <div class="modal-dialog-scroll bg-gray-900 border border-gray-700 rounded-2xl max-w-4xl p-4 sm:p-5 shadow-2xl relative">
+            <div class="modal-header-fixed flex justify-between items-center gap-2 pb-3 border-b border-gray-800">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <button onclick="fecharModalDrillDown()" class="bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition shadow flex-shrink-0" title="Voltar">
                         <i class="fa-solid fa-arrow-left text-blue-400"></i> <span>Voltar</span>
                     </button>
-                    <div>
-                        <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    <div class="min-w-0">
+                        <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2 truncate">
                             <i class="fa-solid fa-list-check text-blue-400"></i> Lançamentos Brutos no Período Selecionado
                         </h3>
-                        <p id="drillDownSubtitulo" class="text-[11px] text-gray-400"></p>
+                        <p id="drillDownSubtitulo" class="text-[11px] text-gray-400 truncate"></p>
                     </div>
                 </div>
-                <button onclick="fecharModalDrillDown()" class="text-gray-400 hover:text-white p-2 text-lg" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="fecharModalDrillDown()" class="text-gray-400 hover:text-white p-2 text-lg flex-shrink-0" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div id="drillDownCorpo" class="flex-1 min-h-0 overflow-y-auto py-4 space-y-4 text-xs pr-1 sm:pr-2"></div>
-            <div class="pt-3 border-t border-gray-800 flex justify-end flex-shrink-0">
-                <button onclick="fecharModalDrillDown()" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition flex items-center gap-2">
+            <div id="drillDownCorpo" class="modal-body-scroll py-3 space-y-4 text-xs pr-1 sm:pr-2"></div>
+            <div class="modal-footer-fixed pt-3 border-t border-gray-800 flex justify-end">
+                <button onclick="fecharModalDrillDown()" class="px-5 py-2 rounded-xl text-xs font-bold bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition flex items-center gap-2">
                     <i class="fa-solid fa-arrow-left"></i> Voltar / Fechar
                 </button>
             </div>
@@ -1130,28 +1195,28 @@
     </div>
 
     <!-- MODAL DE EXECUÇÃO DOS 14 TESTES OBRIGATÓRIOS -->
-    <div id="modalTestes" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden">
-        <div class="bg-gray-900 border-2 border-emerald-500/80 rounded-2xl w-full max-w-3xl h-[88vh] max-h-[88vh] flex flex-col p-4 sm:p-6 shadow-2xl relative overflow-hidden">
-            <div class="flex justify-between items-center pb-3 border-b border-gray-800 flex-shrink-0">
-                <div class="flex items-center gap-3">
-                    <button onclick="fecharModalTestes()" class="bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition shadow" title="Voltar">
+    <div id="modalTestes" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
+        <div class="modal-dialog-scroll bg-gray-900 border-2 border-emerald-500/80 rounded-2xl max-w-3xl p-4 sm:p-5 shadow-2xl relative">
+            <div class="modal-header-fixed flex justify-between items-center gap-2 pb-3 border-b border-gray-800">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <button onclick="fecharModalTestes()" class="bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition shadow flex-shrink-0" title="Voltar">
                         <i class="fa-solid fa-arrow-left text-emerald-400"></i> <span>Voltar</span>
                     </button>
-                    <div>
-                        <h3 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
+                    <div class="min-w-0">
+                        <h3 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-2 truncate">
                             <i class="fa-solid fa-vial-circle-check text-emerald-400"></i> Relatório de Testes Automatizados
                         </h3>
-                        <p class="text-[11px] text-gray-400">Validação técnica e matemática dos 14 requisitos exigidos pelo projeto.</p>
+                        <p class="text-[11px] text-gray-400 truncate">Validação técnica e matemática dos 14 requisitos exigidos pelo projeto.</p>
                     </div>
                 </div>
-                <button onclick="fecharModalTestes()" class="text-gray-400 hover:text-white p-2 text-lg" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="fecharModalTestes()" class="text-gray-400 hover:text-white p-2 text-lg flex-shrink-0" title="Fechar"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div id="conteudoRelatorioTestes" class="flex-1 min-h-0 overflow-y-auto py-3 space-y-2 text-xs pr-1 sm:pr-2">
+            <div id="conteudoRelatorioTestes" class="modal-body-scroll py-3 space-y-2 text-xs pr-1 sm:pr-2">
                 Executando testes...
             </div>
-            <div class="pt-3 border-t border-gray-800 flex flex-wrap justify-between items-center gap-2 flex-shrink-0">
+            <div class="modal-footer-fixed pt-3 border-t border-gray-800 flex flex-wrap justify-between items-center gap-2">
                 <span id="resumoExecucaoTestes" class="text-xs text-gray-300 font-mono font-bold"></span>
-                <button onclick="fecharModalTestes()" class="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-emerald-500 hover:bg-emerald-400 text-gray-950 transition flex items-center gap-2 shadow-lg shadow-emerald-500/20">
+                <button onclick="fecharModalTestes()" class="px-5 py-2 rounded-xl text-xs font-extrabold bg-emerald-500 hover:bg-emerald-400 text-gray-950 transition flex items-center gap-2 shadow-lg shadow-emerald-500/20">
                     <i class="fa-solid fa-arrow-left"></i> Voltar / Concluir
                 </button>
             </div>
@@ -1710,9 +1775,9 @@
                 btn.className = "bottom-nav-btn text-gray-400 hover:text-emerald-400 transition";
             });
             const btnAtivo = document.getElementById('btnAba' + abaNome);
-            if (btnAtivo) btnAtivo.className = "bottom-nav-btn text-emerald-400 transition";
+            if (btnAtivo) btnAtivo.className = "bottom-nav-btn nav-ativo text-emerald-400 transition";
 
-            if (abaNome === 'VisaoGeral') { renderizarGrafico(); renderizarApp(); }
+            if (abaNome === 'VisaoGeral') { renderizarApp(); }
             if (abaNome === 'Analises') renderizarAbaAnalises();
             if (abaNome === 'Ajustes') renderizarAbaAjustes();
             if (abaNome === 'ComoUsar') { window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -2556,7 +2621,11 @@
                 const regs = [
                     ...db.abastecimentos.filter(a => a.veiculoId === v.id).map(a => ({ tipo: 'Abastecimento', data: a.data, odometro: a.odometro, id: a.id })),
                     ...db.manutencoes.filter(m => m.veiculoId === v.id).map(m => ({ tipo: 'Manutenção', data: m.data, odometro: m.odometro, id: m.id }))
-                ].sort((a, b) => new Date(a.data) - new Date(b.data));
+                ].sort((a, b) => {
+                    const tA = new Date(`${a.data || '1970-01-01'}T${(a.hora || '00:00').slice(0,5)}:00`).getTime();
+                    const tB = new Date(`${b.data || '1970-01-01'}T${(b.hora || '00:00').slice(0,5)}:00`).getTime();
+                    return tA - tB || (a.id || 0) - (b.id || 0);
+                });
 
                 for (let i = 1; i < regs.length; i++) {
                     if (regs[i].odometro < regs[i - 1].odometro) {
@@ -3700,6 +3769,11 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const texto = e.target.result;
+                if (!/\.(txt|json)$/i.test(file.name)) {
+                    alert('Para importar um backup completo do DriveStats, selecione um arquivo .txt ou .json.');
+                    event.target.value = '';
+                    return;
+                }
                 if (/\.(txt|json)$/i.test(file.name)) {
                     try {
                         const dados = JSON.parse(texto);
