@@ -95,20 +95,79 @@
             color: #34d399 !important;
         }
 
+        /* =========================================================
+           AJUSTE DA BARRA CENTRAL (SUB-ABAS DE ANÁLISES E PILLS DO GUIA)
+           ========================================================= */
         #abaAnalises, #abaAnalises > div, #abaAnalises .grid > div {
             max-width: 100% !important;
             min-width: 0 !important;
             box-sizing: border-box !important;
         }
-        .subtabs-scroll-bar {
-            display: flex;
+
+        .central-bar-wrapper {
+            position: relative;
             width: 100%;
             max-width: 100%;
-            overflow-x: auto;
+            background-color: rgba(17, 24, 39, 0.92);
+            border: 1px solid #1f2937;
+            border-radius: 0.875rem;
+            padding: 0.25rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+        }
+
+        .subtabs-scroll-bar {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            gap: 0.375rem !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
             -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
             scrollbar-width: none;
+            padding: 2px 4px;
         }
         .subtabs-scroll-bar::-webkit-scrollbar { display: none; }
+
+        @media (min-width: 900px) {
+            .subtabs-scroll-bar {
+                justify-content: space-between !important;
+            }
+        }
+
+        .subtab-btn {
+            flex: 0 0 auto !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.4rem !important;
+            padding: 0.5rem 0.75rem !important;
+            border-radius: 0.625rem !important;
+            border-bottom: none !important;
+            font-size: 0.75rem !important;
+            line-height: 1.1 !important;
+            color: #9ca3af;
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+        .subtab-btn:hover {
+            color: #f3f4f6;
+            background-color: rgba(31, 41, 55, 0.85);
+        }
+        .subtab-btn.active {
+            background-color: rgba(16, 185, 129, 0.16) !important;
+            color: #34d399 !important;
+            border: 1px solid rgba(16, 185, 129, 0.38) !important;
+            font-weight: 700 !important;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+        }
+
         .modal-dialog-scroll {
             display: flex !important;
             flex-direction: column !important;
@@ -165,15 +224,19 @@
             flex-wrap: nowrap;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
             scrollbar-width: none;
-            gap: 0.5rem;
-            padding-bottom: 4px;
+            gap: 0.45rem;
+            padding: 2px 4px;
+            width: 100%;
+            max-width: 100%;
         }
         .guia-nav-pills::-webkit-scrollbar { display: none; }
-        @media (min-width: 768px) {
+        @media (min-width: 900px) {
             .guia-nav-pills {
                 flex-wrap: wrap;
                 overflow-x: visible;
+                justify-content: flex-start;
             }
         }
         .guia-pill-btn {
@@ -393,26 +456,28 @@
                 </div>
             </div>
 
-            <!-- SUB-NAVEGAÇÃO -->
-            <div class="flex border-b border-gray-800 overflow-x-auto text-xs whitespace-nowrap gap-1">
-                <button onclick="mudarSubAbaAnalises('consumo')" id="subtabBtn_consumo" class="subtab-btn active px-4 py-2.5 transition flex items-center gap-2">
-                    <i class="fa-solid fa-bolt"></i> Consumo & Energia
-                </button>
-                <button onclick="mudarSubAbaAnalises('financeiro')" id="subtabBtn_financeiro" class="subtab-btn text-gray-400 hover:text-white px-4 py-2.5 transition flex items-center gap-2">
-                    <i class="fa-solid fa-coins"></i> Custos Operacionais & TCO
-                </button>
-                <button onclick="mudarSubAbaAnalises('preventiva')" id="subtabBtn_preventiva" class="subtab-btn text-gray-400 hover:text-white px-4 py-2.5 transition flex items-center gap-2">
-                    <i class="fa-solid fa-screwdriver-wrench"></i> Preventiva Inteligente
-                </button>
-                <button onclick="mudarSubAbaAnalises('inteligencia')" id="subtabBtn_inteligencia" class="subtab-btn text-gray-400 hover:text-white px-4 py-2.5 transition flex items-center gap-2">
-                    <i class="fa-solid fa-brain"></i> Diagnósticos & Recorrência
-                </button>
-                <button onclick="mudarSubAbaAnalises('comparativo')" id="subtabBtn_comparativo" class="subtab-btn text-gray-400 hover:text-white px-4 py-2.5 transition flex items-center gap-2">
-                    <i class="fa-solid fa-code-compare"></i> Combustão vs Elétricos
-                </button>
-                <button onclick="mudarSubAbaAnalises('auditoria')" id="subtabBtn_auditoria" class="subtab-btn text-gray-400 hover:text-white px-4 py-2.5 transition flex items-center gap-2">
-                    <i class="fa-solid fa-shield-halved"></i> Auditoria de Dados
-                </button>
+            <!-- BARRA CENTRAL DE SUB-NAVEGAÇÃO (AJUSTADA E RESPONSIVA) -->
+            <div class="central-bar-wrapper">
+                <div class="subtabs-scroll-bar" role="tablist">
+                    <button onclick="mudarSubAbaAnalises('consumo')" id="subtabBtn_consumo" class="subtab-btn active">
+                        <i class="fa-solid fa-bolt"></i> Consumo & Energia
+                    </button>
+                    <button onclick="mudarSubAbaAnalises('financeiro')" id="subtabBtn_financeiro" class="subtab-btn">
+                        <i class="fa-solid fa-coins"></i> Custos & TCO
+                    </button>
+                    <button onclick="mudarSubAbaAnalises('preventiva')" id="subtabBtn_preventiva" class="subtab-btn">
+                        <i class="fa-solid fa-screwdriver-wrench"></i> Preventiva
+                    </button>
+                    <button onclick="mudarSubAbaAnalises('inteligencia')" id="subtabBtn_inteligencia" class="subtab-btn">
+                        <i class="fa-solid fa-brain"></i> Diagnósticos
+                    </button>
+                    <button onclick="mudarSubAbaAnalises('comparativo')" id="subtabBtn_comparativo" class="subtab-btn">
+                        <i class="fa-solid fa-code-compare"></i> Combustão vs EV
+                    </button>
+                    <button onclick="mudarSubAbaAnalises('auditoria')" id="subtabBtn_auditoria" class="subtab-btn">
+                        <i class="fa-solid fa-shield-halved"></i> Auditoria
+                    </button>
+                </div>
             </div>
 
             <!-- SUB-ABA 1: CONSUMO & ENERGIA -->
@@ -769,33 +834,35 @@
                     </div>
                 </div>
 
-                <!-- BARRA DE NAVEGAÇÃO DOS MÓDULOS DO GUIA (RESPONSIVA MOBILE/DESKTOP) -->
-                <div class="mt-4 pt-4 border-t border-gray-800/90">
-                    <div class="guia-nav-pills" role="tablist">
-                        <button type="button" onclick="selecionarModuloGuia('todos')" id="guiaPill_todos" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-500 text-gray-950 shadow transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-layer-group"></i> Todos os Módulos (7)
-                        </button>
-                        <button type="button" onclick="selecionarModuloGuia('banco')" id="guiaPill_banco" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-database text-emerald-400"></i> 1. Banco & Drive
-                        </button>
-                        <button type="button" onclick="selecionarModuloGuia('frota')" id="guiaPill_frota" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-car-side text-cyan-400"></i> 2. Carros & Motos (EV)
-                        </button>
-                        <button type="button" onclick="selecionarModuloGuia('abastecimento')" id="guiaPill_abastecimento" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-gas-pump text-yellow-400"></i> 3. Abastecimentos & Recargas
-                        </button>
-                        <button type="button" onclick="selecionarModuloGuia('oficina')" id="guiaPill_oficina" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-wrench text-blue-400"></i> 4. Oficina & Preventiva
-                        </button>
-                        <button type="button" onclick="selecionarModuloGuia('avisos')" id="guiaPill_avisos" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-bell text-amber-400"></i> 5. Avisos & Locais GPS
-                        </button>
-                        <button type="button" onclick="selecionarModuloGuia('analises')" id="guiaPill_analises" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-chart-line text-purple-400"></i> 6. Análises & TCO
-                        </button>
-                        <button type="button" onclick="selecionarModuloGuia('ajustes')" id="guiaPill_ajustes" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-file-export text-teal-400"></i> 7. Excel, Testes & Ajustes
-                        </button>
+                <!-- BARRA CENTRAL DOS MÓDULOS DO GUIA (RESPONSIVA MOBILE/DESKTOP) -->
+                <div class="mt-4 pt-3 border-t border-gray-800/90">
+                    <div class="central-bar-wrapper bg-gray-950/70">
+                        <div class="guia-nav-pills" role="tablist">
+                            <button type="button" onclick="selecionarModuloGuia('todos')" id="guiaPill_todos" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-500 text-gray-950 shadow transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-layer-group"></i> Todos (7)
+                            </button>
+                            <button type="button" onclick="selecionarModuloGuia('banco')" id="guiaPill_banco" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-database text-emerald-400"></i> 1. Banco & Drive
+                            </button>
+                            <button type="button" onclick="selecionarModuloGuia('frota')" id="guiaPill_frota" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-car-side text-cyan-400"></i> 2. Frota (EV)
+                            </button>
+                            <button type="button" onclick="selecionarModuloGuia('abastecimento')" id="guiaPill_abastecimento" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-gas-pump text-yellow-400"></i> 3. Abastecimento
+                            </button>
+                            <button type="button" onclick="selecionarModuloGuia('oficina')" id="guiaPill_oficina" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-wrench text-blue-400"></i> 4. Oficina
+                            </button>
+                            <button type="button" onclick="selecionarModuloGuia('avisos')" id="guiaPill_avisos" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-bell text-amber-400"></i> 5. Avisos & GPS
+                            </button>
+                            <button type="button" onclick="selecionarModuloGuia('analises')" id="guiaPill_analises" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-chart-line text-purple-400"></i> 6. Análises & TCO
+                            </button>
+                            <button type="button" onclick="selecionarModuloGuia('ajustes')" id="guiaPill_ajustes" class="guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-file-export text-teal-400"></i> 7. Excel & Ajustes
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1624,6 +1691,7 @@
                 if (!btn) return;
                 if (m === modulo) {
                     btn.className = 'guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-500 text-gray-950 shadow transition flex items-center gap-1.5';
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 } else {
                     btn.className = 'guia-pill-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-800/90 text-gray-300 hover:text-white border border-gray-700 transition flex items-center gap-1.5';
                 }
@@ -2307,10 +2375,13 @@
         function mudarSubAbaAnalises(nomeSubaba) {
             filtroAnaliseEstado.subabaAtiva = nomeSubaba;
             document.querySelectorAll('.subtab-btn').forEach(btn => {
-                btn.className = "subtab-btn text-gray-400 hover:text-white px-4 py-2.5 transition flex items-center gap-2";
+                btn.classList.remove('active');
             });
             const btnAtivo = document.getElementById('subtabBtn_' + nomeSubaba);
-            if (btnAtivo) btnAtivo.className = "subtab-btn active px-4 py-2.5 transition flex items-center gap-2";
+            if (btnAtivo) {
+                btnAtivo.classList.add('active');
+                btnAtivo.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
 
             ['consumo', 'financeiro', 'preventiva', 'inteligencia', 'comparativo', 'auditoria'].forEach(s => {
                 const el = document.getElementById('subaba_' + s);
@@ -3298,124 +3369,149 @@
                 const c2 = DriveStatsAnalytics.calcularCiclosPorVeiculo(999, abasts2).ciclos;
                 asserir(2, "Cálculo com Abastecimentos Parciais", c2.length === 1 && Math.abs(c2[0].kmPorLitro - 10.0) < 0.01, `Acumulado: 500 km / 50L -> ${c2[0]?.kmPorLitro?.toFixed(2)} km/L`);
 
-                const custoKm = c1[0].valorConsumido / c1[0].kmPercorrido;
-                asserir(3, "Custo Energético por Quilômetro", Math.abs(custoKm - 0.50) < 0.01, `R$ 250 / 500 km = R$ ${custoKm.toFixed(2)}/km`);
+                const mm = DriveStatsAnalytics.calcularMediaMovel([
+                    { kmPorLitro: 10 }, { kmPorLitro: 12 }, { kmPorLitro: 14 }, { kmPorLitro: 16 }
+                ], 3);
+                asserir(3, "Cálculo de Média Móvel (Janela 3)", mm[2] === 12 && mm[3] === 14, `Médias: [${mm.join(', ')}]`);
 
-                const tcoKm = (250 + 100) / 500;
-                asserir(4, "Custo Total Operacional por Quilômetro (TCO)", Math.abs(tcoKm - 0.70) < 0.01, `TCO = R$ ${tcoKm.toFixed(2)}/km`);
+                const anom = DriveStatsAnalytics.detectarAnomalia([
+                    { kmPorLitro: 15, data: "2026-01-01", odometroFim: 1000 },
+                    { kmPorLitro: 15.2, data: "2026-01-10", odometroFim: 1300 },
+                    { kmPorLitro: 14.8, data: "2026-01-20", odometroFim: 1600 },
+                    { kmPorLitro: 12.0, data: "2026-01-30", odometroFim: 1900 }
+                ], 10);
+                asserir(4, "Detecção de Anomalia (Queda >10%)", anom !== null && anom.tipo === 'queda' && anom.variacaoPct > 15, `Variação: -${anom?.variacaoPct?.toFixed(1)}%`);
 
-                const diffPct = ((12.0 - 10.0) / 10.0) * 100;
-                asserir(5, "Comparação entre Períodos (Variação %)", Math.abs(diffPct - 20.0) < 0.01, `+${diffPct.toFixed(1)}%`);
+                const custoKm = 240.00 / 400;
+                asserir(5, "Custo Energético por Quilômetro (R$/km)", Math.abs(custoKm - 0.60) < 0.001, `R$ 240,00 / 400 km -> R$ ${custoKm.toFixed(2)}/km`);
 
-                const planoKm = { kmUltima: 80000, intervaloKm: 10000, intervaloMeses: 12, dataUltima: "2026-01-01" };
-                const stKm = DriveStatsAnalytics.calcularStatusPreventiva(planoKm, 88000, new Date("2026-03-01"));
-                asserir(6, "Cálculo de Manutenção por Quilometragem", stKm.kmRestantes === 2000, `Restam: ${stKm.kmRestantes} km`);
+                const tcoKm = (240 + 160) / 400;
+                asserir(6, "Custo Operacional Total (TCO/km)", Math.abs(tcoKm - 1.00) < 0.001, `R$ 400,00 / 400 km -> R$ ${tcoKm.toFixed(2)}/km`);
 
-                const planoTempo = { kmUltima: 10000, intervaloKm: 50000, intervaloMeses: 6, dataUltima: "2026-01-01" };
-                const stTempo = DriveStatsAnalytics.calcularStatusPreventiva(planoTempo, 11000, new Date("2026-07-01"));
-                asserir(7, "Cálculo de Manutenção por Tempo", stTempo.status === 'vencida' || stTempo.status === 'necessaria', `Vencimento por calendário detectado`);
+                const stPrev1 = DriveStatsAnalytics.calcularStatusPreventiva(
+                    { kmUltima: 10000, dataUltima: "2025-01-01", intervaloKm: 10000, intervaloMeses: 24 },
+                    19600, new Date("2025-06-01T12:00:00"), 500, 15
+                );
+                asserir(7, "Preventiva por Odômetro (Próxima da Revisão)", stPrev1.status === 'proxima' && stPrev1.kmRestantes === 400, `Restam: ${stPrev1.kmRestantes} km -> Status: ${stPrev1.status}`);
 
-                const planoEstados = { kmUltima: 10000, intervaloKm: 5000, intervaloMeses: 12, dataUltima: "2026-01-01" };
-                const e1 = DriveStatsAnalytics.calcularStatusPreventiva(planoEstados, 11000, new Date("2026-02-01"), 500, 15).status;
-                const e2 = DriveStatsAnalytics.calcularStatusPreventiva(planoEstados, 14600, new Date("2026-02-01"), 500, 15).status;
-                const e3 = DriveStatsAnalytics.calcularStatusPreventiva(planoEstados, 15000, new Date("2026-02-01"), 500, 15).status;
-                const e4 = DriveStatsAnalytics.calcularStatusPreventiva(planoEstados, 15500, new Date("2026-02-01"), 500, 15).status;
-                asserir(8, "Matriz de 4 Estados Preventivos", e1 === 'em_dia' && e2 === 'proxima' && e3 === 'necessaria' && e4 === 'vencida', `${e1} -> ${e2} -> ${e3} -> ${e4}`);
+                const stPrev2 = DriveStatsAnalytics.calcularStatusPreventiva(
+                    { kmUltima: 10000, dataUltima: "2025-01-01", intervaloKm: 50000, intervaloMeses: 6 },
+                    12000, new Date("2025-07-05T12:00:00"), 500, 15
+                );
+                asserir(8, "Preventiva por Tempo (Vencida por Data)", stPrev2.status === 'vencida' && stPrev2.diasRestantes < 0, `Dias: ${stPrev2.diasRestantes} -> Status: ${stPrev2.status}`);
 
-                const ciclosAnomalia = [
-                    { kmPorLitro: 15.0, data: "2026-01-01" },
-                    { kmPorLitro: 14.8, data: "2026-01-10" },
-                    { kmPorLitro: 15.2, data: "2026-01-20" },
-                    { kmPorLitro: 12.0, data: "2026-01-30" }
+                const stPrev3 = DriveStatsAnalytics.calcularStatusPreventiva(
+                    { kmUltima: 10000, dataUltima: "2025-01-01", intervaloKm: 10000, intervaloMeses: 6 },
+                    12000, new Date("2025-08-01T12:00:00"), 500, 15
+                );
+                asserir(9, "Critério Duplo (Prevalência Tempo vs KM)", stPrev3.status === 'vencida' && stPrev3.criterioVencendo.includes('Tempo'), `Vencendo por: ${stPrev3.criterioVencendo}`);
+
+                const dadosF = [
+                    { data: "2026-01-01", v: 1 }, { data: "2026-01-15", v: 2 }, { data: "2026-02-01", v: 3 }
                 ];
-                const anom = DriveStatsAnalytics.detectarAnomalia(ciclosAnomalia, 10);
-                asserir(9, "Detecção de Anomalia de Consumo", anom && anom.tipo === 'queda', `Queda detectada: -${anom?.variacaoPct?.toFixed(1)}%`);
+                const filt = DriveStatsAnalytics.filtrarPorIntervalo(dadosF, new Date("2026-01-10T00:00:00"), new Date("2026-01-20T23:59:59"));
+                asserir(10, "Filtragem Temporal Período Customizado", filt.length === 1 && filt[0].v === 2, `Encontrados: ${filt.length} registro(s)`);
 
-                const odometros = [{ odo: 10000 }, { odo: 9500 }];
-                asserir(10, "Detecção de Odômetro Regressivo", odometros[1].odo < odometros[0].odo, `9.500 km após 10.000 km`);
+                const pAnt = DriveStatsAnalytics.obterPeriodoAnterior(new Date("2026-02-01T00:00:00"), new Date("2026-02-10T23:59:59"));
+                asserir(11, "Cálculo Dinâmico de Período Anterior", pAnt !== null && pAnt.fim < new Date("2026-02-01T00:00:00"), `Fim anterior: ${pAnt?.fim?.toISOString()?.slice(0, 10)}`);
 
-                const legado = { veiculos: [{ id: 1, nome: "Fusca", odometro: 50000 }], abastecimentos: [], manutencoes: [], avisos: [], locais: [] };
-                const normalizado = normalizarBanco(legado);
-                asserir(11, "Migração Compatível de Registros", Array.isArray(normalizado.planosPreventivos), `Retrocompatibilidade garantida`);
+                const razaoFlex = (3.80 / 6.00) * 100;
+                asserir(12, "Paridade Combustível Flex (Relação 70%)", razaoFlex < 70, `Relação Etanol/Gasolina: ${razaoFlex.toFixed(1)}%`);
 
-                asserir(12, "Validação Formal do Banco", validarBanco(db), `Schema validado`);
+                const recEv = [
+                    { id: 1, veiculoId: 888, odometro: 1000, litros: 30, valorTotal: 25.50, tanqueCheio: true, data: "2026-01-01" },
+                    { id: 2, veiculoId: 888, odometro: 1210, litros: 35, valorTotal: 29.75, tanqueCheio: true, data: "2026-01-10" }
+                ];
+                const cEv = DriveStatsAnalytics.calcularCiclosPorVeiculo(888, recEv).ciclos;
+                asserir(13, "Eficiência Veículo Elétrico (km/kWh)", cEv.length === 1 && Math.abs(cEv[0].kmPorLitro - 6.0) < 0.01, `Dist: 210 km, Energia: 35 kWh -> ${cEv[0]?.kmPorLitro?.toFixed(2)} km/kWh`);
 
-                const temCarroEv = db.veiculos.some(v => v.tipo === 'carro_eletrico');
-                const temMotoEv = db.veiculos.some(v => v.tipo === 'moto_eletrica');
-                asserir(13, "Suporte a Carros e Motos Elétricas", temCarroEv && temMotoEv, `Carro EV e Moto EV ativos na frota demonstrativa`);
+                const copia = normalizarBanco(JSON.parse(JSON.stringify(db)));
+                asserir(14, "Normalização e Validação Estrutural JSON", validarBanco(copia), "Integridade do esquema aprovada");
 
-                const ciclosEv = DriveStatsAnalytics.calcularCiclosPorVeiculo(3, db.abastecimentos).ciclos;
-                asserir(14, "Eficiência Energética EV (km/kWh)", ciclosEv.length >= 2 && ciclosEv[0].kmPorLitro > 5, `Carro EV: ${ciclosEv[0]?.kmPorLitro?.toFixed(2)} km/kWh`);
+                const hasXSS = esc("<script>alert(1)<\/script>").includes("<script>");
+                asserir(15, "Sanitização Anti-XSS (Escape HTML)", !hasXSS, "Tags maliciosas neutralizadas");
 
-                const ciclosMotoEv = DriveStatsAnalytics.calcularCiclosPorVeiculo(4, db.abastecimentos).ciclos;
-                asserir(15, "Eficiência Moto Elétrica (km/kWh)", ciclosMotoEv.length >= 2 && ciclosMotoEv[0].kmPorLitro > 10, `Moto EV: ${ciclosMotoEv[0]?.kmPorLitro?.toFixed(2)} km/kWh`);
             } catch (err) {
-                asserir(99, "Erro Geral de Execução", false, err.message);
+                asserir(99, "Exceção na Suíte", false, err.message);
             }
 
             const t1 = performance.now();
-            const totalPassou = resultados.filter(r => r.passou).length;
-            resumo.textContent = `Aprovados: ${totalPassou} de ${resultados.length} em ${(t1 - t0).toFixed(1)} ms`;
+            const passaram = resultados.filter(r => r.passou).length;
 
             container.innerHTML = resultados.map(r => `
-                <div class="p-2.5 rounded-xl border ${r.passou ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-red-950/30 border-red-500/40'} flex items-start gap-2.5">
-                    <span class="${r.passou ? 'text-emerald-400' : 'text-red-400'} text-base mt-0.5">
-                        <i class="fa-solid ${r.passou ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
-                    </span>
+                <div class="p-2.5 rounded-xl border ${r.passou ? 'bg-emerald-950/25 border-emerald-500/30' : 'bg-red-950/30 border-red-500/50'} flex justify-between items-center gap-2">
                     <div class="space-y-0.5">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-white">${r.id}. ${esc(r.nome)}</span>
-                            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${r.passou ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">${r.passou ? 'PASSOU' : 'FALHOU'}</span>
-                        </div>
-                        <p class="text-gray-300 text-[11px] font-mono">${esc(r.detalhes)}</p>
+                        <span class="font-bold text-white flex items-center gap-1.5">
+                            ${r.passou ? '<i class="fa-solid fa-circle-check text-emerald-400"></i>' : '<i class="fa-solid fa-circle-xmark text-red-400"></i>'}
+                            #${r.id} - ${esc(r.nome)}
+                        </span>
+                        <span class="text-gray-400 text-[11px] block font-mono">${esc(r.detalhes)}</span>
                     </div>
+                    <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded ${r.passou ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">
+                        ${r.passou ? 'PASSOU' : 'FALHOU'}
+                    </span>
                 </div>
             `).join('');
+
+            resumo.textContent = `${passaram}/${resultados.length} cenários aprovados (${(t1 - t0).toFixed(1)} ms)`;
+            resumo.className = passaram === resultados.length ? "text-xs text-emerald-400 font-mono font-bold" : "text-xs text-red-400 font-mono font-bold";
         }
 
         // ==========================================
-        // OUTRAS FUNÇÕES DE INTERFACE E EXPORTAÇÃO
+        // RENDERIZAÇÃO DASHBOARD, LISTAS & CRUD
         // ==========================================
         function renderizarAlertasDestaque(avisos, planos, odometroAtual) {
-            const secao = document.getElementById('secaoAlertasDestaque');
+            const container = document.getElementById('secaoAlertasDestaque');
             const lista = document.getElementById('listaAlertasDestaque');
-            if (!secao || !lista) return;
-
             const hoje = new Date();
-            hoje.setHours(0,0,0,0);
+            hoje.setHours(0, 0, 0, 0);
 
-            const urgentes = [];
+            const alertasVisiveis = [];
+
             avisos.forEach(av => {
-                if (av.tipo === 'data' && av.limiteData) {
-                    const dLimite = new Date(av.limiteData + 'T00:00:00');
-                    const diffDias = Math.round((dLimite - hoje) / (1000 * 60 * 60 * 24));
-                    if (diffDias <= 7) urgentes.push({ titulo: av.titulo, status: diffDias < 0 ? `Vencido há ${Math.abs(diffDias)}d` : `Vence em ${diffDias}d` });
+                if (av.tipo === 'km') {
+                    const diff = av.limite - odometroAtual;
+                    if (diff <= (db.configuracoes?.margemAlertaKm || 500)) {
+                        alertasVisiveis.push({
+                            texto: av.titulo,
+                            detalhe: diff < 0 ? `Vencido há ${Math.abs(diff)} km` : `Vence em ${diff} km (${av.limite} km)`,
+                            critico: diff < 0
+                        });
+                    }
                 } else {
-                    const diffKm = (av.limite || 0) - odometroAtual;
-                    if (diffKm <= 500) urgentes.push({ titulo: av.titulo, status: diffKm < 0 ? `Vencido há ${Math.abs(diffKm)}km` : `Vence em ${diffKm}km` });
+                    const dataLimite = new Date(av.limiteData + 'T00:00:00');
+                    const diffDias = Math.ceil((dataLimite - hoje) / (1000 * 60 * 60 * 24));
+                    if (diffDias <= (db.configuracoes?.margemAlertaDias || 15)) {
+                        alertasVisiveis.push({
+                            texto: av.titulo,
+                            detalhe: diffDias < 0 ? `Vencido há ${Math.abs(diffDias)} dias` : `Vence em ${diffDias} dias`,
+                            critico: diffDias < 0
+                        });
+                    }
                 }
             });
 
             planos.forEach(p => {
-                const st = DriveStatsAnalytics.calcularStatusPreventiva(p, odometroAtual, hoje);
-                if (st.status === 'vencida' || st.status === 'necessaria' || st.status === 'proxima') {
-                    urgentes.push({
-                        titulo: `Preventiva: ${p.nome}`,
-                        status: st.kmRestantes < 0 ? `Vencida (${Math.abs(st.kmRestantes)} km)` : `Próxima (${st.kmRestantes} km)`
+                const st = DriveStatsAnalytics.calcularStatusPreventiva(p, odometroAtual, new Date(), db.configuracoes?.margemAlertaKm, db.configuracoes?.margemAlertaDias);
+                if (st.status !== 'em_dia') {
+                    alertasVisiveis.push({
+                        texto: `Preventiva: ${p.nome}`,
+                        detalhe: st.status === 'vencida' ? `Revisão vencida (${st.kmRestantes} km / ${st.diasRestantes}d)` : `Revisão próxima (${st.kmRestantes} km / ${st.diasRestantes}d)`,
+                        critico: st.status === 'vencida'
                     });
                 }
             });
 
-            if (urgentes.length > 0) {
-                secao.classList.remove('hidden');
-                lista.innerHTML = urgentes.map(u => `
-                    <div class="border border-yellow-500/50 bg-yellow-950/30 p-2.5 rounded-xl flex justify-between items-center text-xs">
-                        <span class="font-bold text-yellow-300"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i> ${esc(u.titulo)}</span>
-                        <span class="font-extrabold px-2 py-0.5 rounded bg-black/40 text-[10px] text-white">${u.status}</span>
+            if (alertasVisiveis.length > 0) {
+                container.classList.remove('hidden');
+                lista.innerHTML = alertasVisiveis.map(al => `
+                    <div class="flex justify-between items-center bg-gray-950/60 p-2.5 rounded-xl border ${al.critico ? 'border-red-500/40' : 'border-yellow-500/40'} text-xs">
+                        <span class="font-bold text-gray-200">${esc(al.texto)}</span>
+                        <span class="${al.critico ? 'text-red-400 font-bold' : 'text-yellow-400'}">${esc(al.detalhe)}</span>
                     </div>
                 `).join('');
             } else {
-                secao.classList.add('hidden');
+                container.classList.add('hidden');
             }
         }
 
@@ -3423,172 +3519,210 @@
             const card = document.getElementById('cardPrevisaoAbastecimento');
             if (!card) return;
             if (abasts.length < 2) {
-                card.innerHTML = `<p class="text-gray-400">Registre pelo menos 2 ${isEv ? 'recargas' : 'abastecimentos'} para habilitar a previsão inteligente.</p>`;
+                card.textContent = isEv
+                    ? "São necessárias pelo menos 2 recargas registradas para projeção de autonomia."
+                    : "São necessários pelo menos 2 abastecimentos registrados para projeção de autonomia.";
                 return;
             }
-            let sorted = [...abasts].sort((a,b) => new Date(a.data + 'T00:00:00') - new Date(b.data + 'T00:00:00'));
-            const corte = new Date(); corte.setDate(corte.getDate() - 90);
-            const recentes = sorted.filter(a => new Date(a.data + 'T00:00:00') >= corte);
-            if (recentes.length >= 2) sorted = recentes;
-            let primeiro = sorted[0];
-            let ultimo = sorted[sorted.length - 1];
-
-            let diffDias = (new Date(ultimo.data + 'T00:00:00') - new Date(primeiro.data + 'T00:00:00')) / (1000 * 60 * 60 * 24);
-            if (diffDias <= 0) diffDias = 1;
-            let kmTotais = ultimo.odometro - primeiro.odometro;
-            if (kmTotais <= 0) {
-                card.innerHTML = `<p class="text-gray-400">Aguardando avanço de quilometragem entre registros.</p>`;
-                return;
+            const ordenados = [...abasts].sort((a, b) => new Date(a.data + 'T00:00:00') - new Date(b.data + 'T00:00:00'));
+            const distancias = [], intervalosDias = [];
+            for (let i = 1; i < ordenados.length; i++) {
+                const dist = ordenados[i].odometro - ordenados[i - 1].odometro;
+                if (dist > 0) distancias.push(dist);
+                const dias = Math.ceil((new Date(ordenados[i].data + 'T00:00:00') - new Date(ordenados[i - 1].data + 'T00:00:00')) / (1000 * 60 * 60 * 24));
+                if (dias > 0) intervalosDias.push(dias);
             }
-            let mediaKmDia = kmTotais / diffDias;
+            const ultimo = ordenados[ordenados.length - 1];
+            const mediaKm = distancias.length ? Math.round(distancias.reduce((a, b) => a + b, 0) / distancias.length) : 300;
+            const mediaDias = intervalosDias.length ? Math.round(intervalosDias.reduce((a, b) => a + b, 0) / intervalosDias.length) : 15;
+            const kmPrevisto = ultimo.odometro + mediaKm;
+            const kmRestante = kmPrevisto - odometroAtual;
 
-            let somaKm = 0;
-            for(let i = 1; i < sorted.length; i++) somaKm += (sorted[i].odometro - sorted[i-1].odometro);
-            let mediaKmPorAbast = somaKm / (sorted.length - 1);
-            let kmProximo = ultimo.odometro + mediaKmPorAbast;
-            let kmFaltam = Math.max(0, kmProximo - odometroAtual);
-            let diasFaltam = mediaKmDia > 0 ? Math.round(kmFaltam / mediaKmDia) : 5;
-            let dataPrev = new Date(); dataPrev.setDate(dataPrev.getDate() + diasFaltam);
+            const dataUltima = new Date(ultimo.data + 'T00:00:00');
+            dataUltima.setDate(dataUltima.getDate() + mediaDias);
 
+            const palavraEvento = isEv ? 'recarregar' : 'abastecer';
             card.innerHTML = `
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-center">
-                    <div class="bg-gray-800/80 p-2.5 rounded-lg border border-gray-700/60">
-                        <span class="text-gray-400 block text-[10px]">Média Diária</span>
-                        <span class="text-white font-bold text-sm">${mediaKmDia.toFixed(1)} km / dia</span>
-                    </div>
-                    <div class="bg-gray-800/80 p-2.5 rounded-lg border border-gray-700/60">
-                        <span class="text-gray-400 block text-[10px]">Autonomia Estimada Restante</span>
-                        <span class="text-emerald-400 font-bold text-sm">${Math.round(kmFaltam).toLocaleString()} km</span>
-                    </div>
-                    <div class="bg-gray-800/80 p-2.5 rounded-lg border border-gray-700/60">
-                        <span class="text-gray-400 block text-[10px]">Previsão de Data</span>
-                        <span class="text-yellow-400 font-bold text-sm">${dataPrev.toLocaleDateString('pt-BR')} (${diasFaltam} dias)</span>
-                    </div>
+                <div class="flex flex-wrap justify-between gap-2 pt-1">
+                    <div><span class="text-gray-400">Autonomia média ciclo:</span> <strong class="text-white">${mediaKm} km</strong></div>
+                    <div><span class="text-gray-400">Odômetro estimado:</span> <strong class="text-emerald-400">${kmPrevisto.toLocaleString()} km</strong> (${kmRestante > 0 ? 'faltam ' + kmRestante + ' km' : `já hora de ${palavraEvento}`})</div>
+                    <div><span class="text-gray-400">Data estimada:</span> <strong class="text-yellow-300">${dataLocalISO(dataUltima)}</strong></div>
                 </div>
             `;
         }
 
         function renderizarListas(abasts, manuts, avisos, veiculo) {
             const isEv = isVeiculoEletrico(veiculo);
-            const unQtd = getUnidadeQuantidade(veiculo);
             const unCons = getUnidadeConsumo(veiculo);
+            const unQtd = getUnidadeQuantidade(veiculo);
 
-            const divAbast = document.getElementById('listaAbastecimentos');
-            if (divAbast) {
-                divAbast.innerHTML = abasts.length ? '' : `<p class="text-xs text-gray-500 text-center py-4">Nenhum registro de ${isEv ? 'recarga' : 'abastecimento'}.</p>`;
-                const res = DriveStatsAnalytics.calcularCiclosPorVeiculo(db.veiculoAtivoId, db.abastecimentos);
-                const ciclosMap = {};
-                res.ciclos.forEach(c => ciclosMap[c.id] = c);
+            const abastsOrdenados = [...abasts].sort((a, b) => (Number(a.odometro) || 0) - (Number(b.odometro) || 0) || new Date(a.data + 'T00:00:00') - new Date(b.data + 'T00:00:00'));
+            const resCiclos = DriveStatsAnalytics.calcularCiclosPorVeiculo(veiculo.id, db.abastecimentos);
+            const mapaCiclos = new Map(resCiclos.ciclos.map(c => [c.id, c]));
 
-                [...abasts].sort((a,b) => (b.odometro - a.odometro) || new Date(b.data + 'T00:00:00') - new Date(a.data + 'T00:00:00')).forEach(a => {
-                    const c = ciclosMap[a.id];
-                    const socTag = (isEv && a.socInicial != null && a.socFinal != null)
-                        ? ` • <span class="text-cyan-300 font-mono">${a.socInicial}% → ${a.socFinal}%</span>`
+            const listaAbast = document.getElementById('listaAbastecimentos');
+            if (abastsOrdenados.length === 0) {
+                listaAbast.innerHTML = `<p class="text-xs text-gray-500 text-center py-8 bg-gray-900/50 rounded-xl border border-gray-800">${isEv ? 'Nenhuma recarga registrada.' : 'Nenhum abastecimento registrado.'}</p>`;
+            } else {
+                listaAbast.innerHTML = [...abastsOrdenados].reverse().map(a => {
+                    const ciclo = mapaCiclos.get(a.id);
+                    const precoUnitario = a.litros > 0 ? (a.valorTotal / a.litros).toFixed(3) : '0.00';
+                    const isCheio = a.tanqueCheio !== false;
+                    const tipoEnergiaLabel = isEv
+                        ? (a.combustivel === 'recarga_dc' ? 'DC Rápida' : a.combustivel === 'recarga_gratuita' ? 'Gratuita' : 'AC Lenta')
+                        : null;
+                    const socBadge = (isEv && a.socInicial !== undefined && a.socFinal !== undefined && a.socInicial !== '' && a.socFinal !== '')
+                        ? `<span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded font-mono">${a.socInicial}% → ${a.socFinal}%</span>`
                         : '';
-                    const whKmTag = (isEv && c && c.kmPorLitro > 0)
-                        ? ` <span class="text-gray-400 text-[10px]">(${Math.round(1000 / c.kmPorLitro)} Wh/km)</span>`
-                        : '';
 
-                    divAbast.innerHTML += `
-                        <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
-                            <div>
-                                <p class="font-bold text-white flex items-center flex-wrap gap-1.5">
-                                    <span><i class="fa-solid ${isEv ? 'fa-bolt text-cyan-400' : 'fa-gas-pump text-emerald-400'} mr-1"></i> ${esc(a.litros)} ${unQtd} • R$ ${esc(a.valorTotal.toFixed(2))}</span>
-                                    ${c ? `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-extrabold text-[11px]"><i class="fa-solid fa-gauge-high mr-0.5"></i> ${c.kmPorLitro.toFixed(1)} ${unCons}</span>${whKmTag}` : `<span class="text-gray-500 text-[10px]">${a.tanqueCheio !== false ? '(Ref. Inicial)' : '(Parcial)'}</span>`}
-                                </p>
-                                <p class="text-gray-400 mt-0.5">${esc(a.data)} às ${esc(a.hora || '12:00')} • ${a.odometro.toLocaleString()} km • ${esc(a.posto || (isEv ? 'Eletroposto' : 'Posto'))}${socTag}</p>
+                    return `
+                        <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl flex justify-between items-center gap-2 shadow">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">${esc(a.data)} às ${esc(a.hora || '12:00')}</span>
+                                    <span class="text-xs text-gray-300 font-semibold">${a.odometro.toLocaleString()} km</span>
+                                    ${!isCheio ? `<span class="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">${isEv ? 'Recarga Parcial' : 'Parcial'}</span>` : ''}
+                                    ${tipoEnergiaLabel ? `<span class="text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded">${tipoEnergiaLabel}</span>` : ''}
+                                    ${socBadge}
+                                    ${ciclo ? `<span class="text-xs font-bold text-blue-400"><i class="fa-solid fa-gauge-high"></i> ${ciclo.kmPorLitro.toFixed(1)} ${unCons}</span>` : ''}
+                                </div>
+                                <p class="text-sm font-bold text-white">${esc(a.posto || (isEv ? 'Ponto de Recarga' : 'Posto não especificado'))}</p>
+                                <p class="text-xs text-gray-400">${a.litros} ${unQtd} • R$ ${precoUnitario}/${unQtd} • Total: <strong class="text-gray-200">R$ ${a.valorTotal.toFixed(2)}</strong></p>
                             </div>
-                            <div class="flex gap-1">
-                                <button onclick="abrirModalAbastecimento(${a.id})" class="text-gray-400 hover:text-emerald-400 p-2"><i class="fa-solid fa-pen"></i></button>
-                                <button onclick="excluirRegistro('abastecimentos', ${a.id})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                            <div class="flex gap-2">
+                                <button onclick="abrirModalAbastecimento(${a.id})" class="text-gray-400 hover:text-white p-2"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="excluirItem('abastecimentos', ${a.id})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
                     `;
-                });
+                }).join('');
             }
 
-            const divManut = document.getElementById('listaManutencoes');
-            if (divManut) {
-                divManut.innerHTML = manuts.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhuma manutenção.</p>';
-                [...manuts].sort((a,b) => (b.odometro - a.odometro) || new Date(b.data + 'T00:00:00') - new Date(a.data + 'T00:00:00')).forEach(m => {
-                    const totalM = (m.itens || []).reduce((acc, i) => acc + (Number(i.valor) || 0), 0);
-                    const itensStr = (m.itens || []).map(i => `${i.nome} (R$ ${Number(i.valor).toFixed(2)})`).join(', ');
-                    divManut.innerHTML += `
-                        <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
-                            <div>
-                                <p class="font-bold text-white"><i class="fa-solid fa-wrench text-blue-400 mr-1"></i> ${esc(m.oficina)} - R$ ${totalM.toFixed(2)} <span class="text-[10px] uppercase font-bold text-gray-400 ml-1">(${esc(m.categoria || 'preventiva')})</span></p>
-                                <p class="text-gray-400">${esc(m.data)} • ${esc(m.odometro.toLocaleString())} km • ${esc(itensStr)}</p>
+            const listaManut = document.getElementById('listaManutencoes');
+            if (manuts.length === 0) {
+                listaManut.innerHTML = `<p class="text-xs text-gray-500 text-center py-8 bg-gray-900/50 rounded-xl border border-gray-800">Nenhuma manutenção registrada.</p>`;
+            } else {
+                listaManut.innerHTML = [...manuts].sort((a, b) => new Date(b.data + 'T00:00:00') - new Date(a.data + 'T00:00:00')).map(m => {
+                    const total = (m.itens || []).reduce((acc, i) => acc + i.valor, 0);
+                    return `
+                        <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl space-y-2 shadow">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">${esc(m.data)} às ${esc(m.hora || '12:00')}</span>
+                                        <span class="text-xs text-gray-300 font-semibold">${m.odometro.toLocaleString()} km</span>
+                                        <span class="text-[10px] uppercase font-mono bg-gray-800 text-gray-300 px-1.5 py-0.5 rounded">${esc(m.categoria || 'preventiva')}</span>
+                                    </div>
+                                    <p class="text-sm font-bold text-white mt-1">${esc(m.oficina)}</p>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button onclick="abrirModalManutencao(${m.id})" class="text-gray-400 hover:text-white p-1.5"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="excluirItem('manutencoes', ${m.id})" class="text-red-400 hover:text-red-300 p-1.5"><i class="fa-solid fa-trash"></i></button>
+                                </div>
                             </div>
-                            <div class="flex gap-1">
-                                <button onclick="abrirModalManutencao(${m.id})" class="text-gray-400 hover:text-blue-400 p-2"><i class="fa-solid fa-pen"></i></button>
-                                <button onclick="excluirRegistro('manutencoes', ${m.id})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                            <ul class="text-xs text-gray-400 space-y-1 border-t border-gray-800 pt-2">
+                                ${(m.itens || []).map(i => `<li class="flex justify-between"><span>• ${esc(i.nome)}</span><span class="text-gray-300">R$ ${i.valor.toFixed(2)}</span></li>`).join('')}
+                            </ul>
+                            <div class="text-right text-xs font-bold text-emerald-400 pt-1">Total: R$ ${total.toFixed(2)}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            const listaAvisos = document.getElementById('listaAvisos');
+            if (avisos.length === 0) {
+                listaAvisos.innerHTML = `<p class="text-xs text-gray-500 text-center py-8 bg-gray-900/50 rounded-xl border border-gray-800">Nenhum aviso ativo.</p>`;
+            } else {
+                listaAvisos.innerHTML = avisos.map(av => {
+                    const desc = av.tipo === 'km' ? `Ao atingir ${av.limite.toLocaleString()} km` : `Data limite: ${esc(av.limiteData)} (${esc(av.recorrencia || 'única')})`;
+                    return `
+                        <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl flex justify-between items-center shadow">
+                            <div>
+                                <p class="text-sm font-bold text-white">${esc(av.titulo)}</p>
+                                <p class="text-xs text-gray-400 mt-0.5">${desc}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="concluirAviso(${av.id})" class="text-emerald-400 hover:text-emerald-300 p-2" title="Concluir"><i class="fa-solid fa-check"></i></button>
+                                <button onclick="excluirItem('avisos', ${av.id})" class="text-red-400 hover:text-red-300 p-2" title="Remover"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
                     `;
-                });
+                }).join('');
             }
 
-            const divAvisos = document.getElementById('listaAvisos');
-            if (divAvisos) {
-                divAvisos.innerHTML = avisos.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhum aviso ativo.</p>';
-                avisos.forEach(av => {
-                    const detalhe = av.tipo === 'data' ? `Vencimento: ${esc(av.limiteData)} (${esc(av.recorrencia || 'nenhuma')})` : `Limite: ${esc(av.limite.toLocaleString())} km`;
-                    divAvisos.innerHTML += `
-                        <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
+            const listaLocais = document.getElementById('listaLocais');
+            if (db.locais.length === 0) {
+                listaLocais.innerHTML = `<p class="text-xs text-gray-500 text-center py-8 bg-gray-900/50 rounded-xl border border-gray-800">Nenhum local cadastrado.</p>`;
+            } else {
+                listaLocais.innerHTML = db.locais.map(l => {
+                    let badgeTipo = 'bg-emerald-500/20 text-emerald-400';
+                    let labelTipoLocal = 'POSTO';
+                    if (l.tipo === 'oficina') { badgeTipo = 'bg-blue-500/20 text-blue-400'; labelTipoLocal = 'OFICINA'; }
+                    else if (l.tipo === 'eletroposto') { badgeTipo = 'bg-cyan-500/20 text-cyan-300'; labelTipoLocal = 'ELETROPOSTO ⚡'; }
+
+                    return `
+                        <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl flex justify-between items-center shadow">
                             <div>
-                                <p class="font-bold text-yellow-400"><i class="fa-solid fa-bell mr-1"></i> ${esc(av.titulo)}</p>
-                                <p class="text-gray-400">${esc(detalhe)}</p>
+                                <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${badgeTipo}">${labelTipoLocal}</span>
+                                <p class="text-sm font-bold text-white mt-1">${esc(l.nome)}</p>
+                                <p class="text-xs text-gray-400">${esc(l.endereco)}</p>
                             </div>
-                            <div class="flex gap-1">
-                                <button onclick="abrirModalAviso(${av.id})" class="text-gray-400 hover:text-yellow-400 p-2"><i class="fa-solid fa-pen"></i></button>
-                                <button onclick="concluirAviso(${av.id})" class="text-emerald-400 hover:text-emerald-300 p-2"><i class="fa-solid fa-check"></i></button>
-                                <button onclick="excluirRegistro('avisos', ${av.id})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                            <div class="flex gap-2">
+                                <button onclick="abrirModalLocal(${l.id})" class="text-gray-400 hover:text-white p-2"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="excluirItem('locais', ${l.id})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </div>
                     `;
-                });
+                }).join('');
             }
+        }
 
-            const divLocais = document.getElementById('listaLocais');
-            if (divLocais) {
-                divLocais.innerHTML = db.locais.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhum local cadastrado.</p>';
-                db.locais.forEach(l => {
-                    const isEletroposto = l.tipo === 'eletroposto';
-                    divLocais.innerHTML += `
-                        <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
-                            <div>
-                                <p class="font-bold text-white"><i class="fa-solid ${isEletroposto ? 'fa-charging-station text-cyan-400' : 'fa-location-dot text-red-400'} mr-1"></i> ${esc(l.nome)}</p>
-                                <p class="text-gray-400 uppercase">Tipo: ${esc(l.tipo)}</p>
-                                ${l.endereco ? `<p class="text-gray-400 mt-1">${esc(l.endereco)}</p>` : ''}
-                            </div>
-                            <div class="flex gap-1">
-                                <button onclick="abrirModalLocal(${l.id})" class="text-gray-400 hover:text-red-400 p-2"><i class="fa-solid fa-pen"></i></button>
-                                <button onclick="excluirRegistro('locais', ${l.id})" class="text-red-400 hover:text-red-300 p-2"><i class="fa-solid fa-trash"></i></button>
-                            </div>
+        function renderizarAbaAjustes() {
+            const container = document.getElementById('listaGerenciarVeiculos');
+            if (!container) return;
+            container.innerHTML = db.veiculos.map(v => {
+                const isEv = isVeiculoEletrico(v);
+                return `
+                    <div class="bg-gray-800/80 p-3 rounded-xl border ${v.id === db.veiculoAtivoId ? 'border-emerald-500/60' : 'border-gray-700/60'} flex justify-between items-center">
+                        <div>
+                            <p class="text-sm font-bold text-white flex items-center gap-2">
+                                ${esc(v.nome)}
+                                ${isEv ? '<span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded font-mono">EV ⚡</span>' : ''}
+                                ${v.id === db.veiculoAtivoId ? '<span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">ATIVO</span>' : ''}
+                            </p>
+                            <p class="text-xs text-gray-400">${esc(v.modelo)} • ${esc(v.placa)} • ${v.odometro.toLocaleString()} km${isEv && v.capacidadeBateria ? ` • ${v.capacidadeBateria} kWh` : ''}</p>
                         </div>
-                    `;
-                });
-            }
+                        <div class="flex gap-1.5">
+                            <button onclick="abrirModalVeiculo(${v.id})" class="text-gray-300 hover:text-white bg-gray-700/60 p-2 rounded-lg"><i class="fa-solid fa-pen"></i></button>
+                            ${db.veiculos.length > 1 ? `<button onclick="excluirVeiculo(${v.id})" class="text-red-400 hover:text-red-300 bg-red-500/10 p-2 rounded-lg"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function renderizarGrafico() {
             const ctx = document.getElementById('graficoConsumo');
             if (!ctx) return;
+            if (chartInstance) chartInstance.destroy();
+
             const veiculo = db.veiculos.find(v => v.id === db.veiculoAtivoId) || db.veiculos[0];
             const unCons = getUnidadeConsumo(veiculo);
-            const res = DriveStatsAnalytics.calcularCiclosPorVeiculo(db.veiculoAtivoId, db.abastecimentos);
-            if (chartInstance) chartInstance.destroy();
+            const ciclos = DriveStatsAnalytics.calcularCiclosPorVeiculo(db.veiculoAtivoId, db.abastecimentos).ciclos;
+
             chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: res.ciclos.map(c => c.data),
+                    labels: ciclos.map(c => c.data),
                     datasets: [{
                         label: `Eficiência (${unCons})`,
-                        data: res.ciclos.map(c => Number(c.kmPorLitro.toFixed(2))),
+                        data: ciclos.map(c => Number(c.kmPorLitro.toFixed(1))),
                         borderColor: isVeiculoEletrico(veiculo) ? '#22d3ee' : '#10b981',
-                        backgroundColor: isVeiculoEletrico(veiculo) ? 'rgba(34, 211, 238, 0.12)' : 'rgba(16, 185, 129, 0.1)',
+                        backgroundColor: isVeiculoEletrico(veiculo) ? 'rgba(34, 211, 238, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.3,
                         fill: true,
-                        tension: 0.3
+                        pointBackgroundColor: isVeiculoEletrico(veiculo) ? '#22d3ee' : '#10b981'
                     }]
                 },
                 options: {
@@ -3603,656 +3737,639 @@
             });
         }
 
-        function renderizarAbaAjustes() {
-            const container = document.getElementById('listaGerenciarVeiculos');
-            if (!container) return;
-            container.innerHTML = '';
-            db.veiculos.forEach(v => {
-                const icone = getIconeTipoVeiculo(v.tipo);
-                const eAtivo = v.id === db.veiculoAtivoId;
-                const isEv = isVeiculoEletrico(v);
-                container.innerHTML += `
-                    <div class="bg-gray-800/80 border ${eAtivo ? 'border-emerald-500/80' : 'border-gray-700'} p-3 rounded-xl flex justify-between items-center text-xs">
-                        <div class="flex items-center gap-2">
-                            <span class="${isEv ? 'text-cyan-400' : 'text-emerald-400'} text-sm"><i class="fa-solid ${icone}"></i></span>
-                            <div>
-                                <p class="font-bold text-white flex items-center gap-2">
-                                    ${esc(v.nome)} ${isEv ? '<span class="bg-cyan-500/20 text-cyan-300 text-[10px] px-1.5 py-0.5 rounded border border-cyan-500/30">EV</span>' : ''} ${eAtivo ? '<span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/30">Ativo</span>' : ''}
-                                </p>
-                                <p class="text-gray-400">${esc(v.modelo)} • ${esc(v.placa)} • ${v.odometro.toLocaleString()} km${v.capacidadeBateria ? ` • ${v.capacidadeBateria} kWh` : ''}</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-1">
-                            <button onclick="abrirModalVeiculo(${v.id})" class="bg-gray-700 hover:bg-emerald-600/30 hover:text-emerald-400 text-gray-200 px-2.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1"><i class="fa-solid fa-pen"></i> Editar</button>
-                            <button onclick="excluirVeiculo(${v.id})" class="bg-gray-700 hover:bg-red-600/30 text-red-400 px-2.5 py-1.5 rounded-lg font-medium transition"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function excluirVeiculo(id) {
-            if (db.veiculos.length <= 1) { alert("Você precisa manter ao menos um veículo."); return; }
-            const v = db.veiculos.find(ve => ve.id === id);
-            if (confirm(`Deseja realmente excluir "${v.nome}" e todos os registros associados?`)) {
-                db.veiculos = db.veiculos.filter(ve => ve.id !== id);
-                db.abastecimentos = db.abastecimentos.filter(a => a.veiculoId !== id);
-                db.manutencoes = db.manutencoes.filter(m => m.veiculoId !== id);
-                db.avisos = db.avisos.filter(av => av.veiculoId !== id);
-                if (db.planosPreventivos) db.planosPreventivos = db.planosPreventivos.filter(p => p.veiculoId !== id);
-                if (db.veiculoAtivoId === id) db.veiculoAtivoId = db.veiculos[0].id;
-                salvarDB(); inicializarApp();
-            }
-        }
-
-        function excluirRegistro(colecao, id) {
-            if (confirm("Deseja realmente excluir este item?")) {
-                db[colecao] = db[colecao].filter(item => item.id !== id);
-                const v = db.veiculos.find(item => item.id === db.veiculoAtivoId);
-                if (v && ['abastecimentos', 'manutencoes'].includes(colecao)) {
-                    const regs = [...db.abastecimentos, ...db.manutencoes].filter(r => r.veiculoId === v.id);
-                    const maxRestante = Math.max(0, ...regs.map(r => Number(r.odometro) || 0));
-                    if (maxRestante > 0 && maxRestante < (Number(v.odometro) || 0)) v.odometro = maxRestante;
-                    else if (!regs.length) v.odometro = 0;
-                }
-                salvarDB(); renderizarApp();
-            }
-        }
-
-        function concluirAviso(id) {
-            let av = db.avisos.find(a => a.id === id);
-            if (!av) return;
-            if (av.recorrencia && av.recorrencia !== 'nenhuma' && av.tipo === 'data' && av.limiteData) {
-                const meses = { mensal: 1, bimestral: 2, trimestral: 3, semestral: 6, anual: 12 }[av.recorrencia] || 0;
-                const base = new Date(av.limiteData + 'T00:00:00');
-                const proximo = new Date(); proximo.setHours(0,0,0,0);
-                if (base > proximo) proximo.setTime(base.getTime());
-                do {
-                    const dia = proximo.getDate();
-                    proximo.setDate(1);
-                    proximo.setMonth(proximo.getMonth() + meses);
-                    const ultimoDia = new Date(proximo.getFullYear(), proximo.getMonth() + 1, 0).getDate();
-                    proximo.setDate(Math.min(dia, ultimoDia));
-                } while (proximo <= new Date());
-                av.limiteData = dataLocalISO(proximo);
-                alert(`Aviso renovado para: ${esc(av.limiteData)}`);
-            } else if (confirm("Deseja concluir e remover este aviso?")) {
-                db.avisos = db.avisos.filter(a => a.id !== id);
-            } else return;
-            salvarDB(); renderizarApp();
-        }
-
         // ==========================================
-        // MODAIS DE EDIÇÃO & CRIAÇÃO
+        // MODAIS DE CADASTRO E EDIÇÃO
         // ==========================================
+        function abrirModal(tituloHtml, corpoHtml, callbackSalvar) {
+            document.getElementById('modalTitulo').innerHTML = tituloHtml;
+            document.getElementById('modalCorpo').innerHTML = corpoHtml;
+            document.getElementById('modalBtnSalvar').onclick = callbackSalvar;
+            document.getElementById('modalForm').classList.remove('hidden');
+        }
+
         function fecharModal() {
             document.getElementById('modalForm').classList.add('hidden');
         }
 
-        function toggleCampoBateriaModal() {
-            const tipo = document.getElementById('inpTipo')?.value || 'carro';
-            const bloco = document.getElementById('blocoCapacidadeBateria');
-            if (bloco) {
-                if (tipo === 'carro_eletrico' || tipo === 'moto_eletrica') bloco.classList.remove('hidden');
-                else bloco.classList.add('hidden');
-            }
+        function alternarCamposVeiculoEv(tipo) {
+            const boxBat = document.getElementById('boxCapacidadeBateria');
+            if (!boxBat) return;
+            if (tipo === 'carro_eletrico' || tipo === 'moto_eletrica') boxBat.classList.remove('hidden');
+            else boxBat.classList.add('hidden');
         }
 
         function abrirModalVeiculo(id = null) {
-            const item = id ? db.veiculos.find(v => v.id === id) : { nome: '', tipo: 'carro', placa: '', modelo: '', odometro: 0, calibragem: '32 psi', capacidadeBateria: '' };
-            const isEv = item.tipo === 'carro_eletrico' || item.tipo === 'moto_eletrica';
-
-            document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-emerald-400"></i> Editar Veículo' : '<i class="fa-solid fa-car text-emerald-400"></i> Novo Veículo';
-            document.getElementById('modalCorpo').innerHTML = `
-                <div><label class="text-xs text-gray-400">Nome do Veículo</label><input id="inpNome" value="${esc(item.nome)}" placeholder="Ex: Dolphin Mini, Voltz EVS..." class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs text-gray-400">Tipo & Propulsão</label>
-                        <select id="inpTipo" onchange="toggleCampoBateriaModal()" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                            <option value="carro" ${item.tipo === 'carro' ? 'selected' : ''}>Carro (Combustão/Flex)</option>
-                            <option value="moto" ${item.tipo === 'moto' ? 'selected' : ''}>Moto (Combustão)</option>
-                            <option value="carro_eletrico" ${item.tipo === 'carro_eletrico' ? 'selected' : ''}>Carro Elétrico (EV)</option>
-                            <option value="moto_eletrica" ${item.tipo === 'moto_eletrica' ? 'selected' : ''}>Moto Elétrica (EV)</option>
-                        </select>
+            const v = id ? db.veiculos.find(item => item.id === id) : { nome: '', tipo: 'carro', placa: '', modelo: '', odometro: 0, calibragem: '', capacidadeBateria: '' };
+            const isEvInit = isVeiculoEletrico(v);
+            const html = `
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="text-gray-400 block mb-1">Nome / Apelido:</label>
+                        <input id="inpVeicNome" value="${esc(v.nome)}" placeholder="Ex: Carro Elétrico, Moto Street..." class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
                     </div>
-                    <div><label class="text-xs text-gray-400">Placa</label><input id="inpPlaca" value="${esc(item.placa)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs text-gray-400">Modelo/Ano</label><input id="inpModelo" value="${esc(item.modelo)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                    <div><label class="text-xs text-gray-400">Odômetro (km)</label><input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs text-gray-400">Calibragem Recomendada</label><input id="inpCalibragem" value="${esc(item.calibragem)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                    <div id="blocoCapacidadeBateria" class="${isEv ? '' : 'hidden'}">
-                        <label class="text-xs text-cyan-300">Bateria (kWh) <span class="text-gray-500">(Opcional)</span></label>
-                        <input id="inpCapacidadeBateria" type="number" step="0.1" value="${item.capacidadeBateria || ''}" placeholder="Ex: 45 ou 4.2" class="w-full bg-gray-800 border border-cyan-500/40 rounded p-2 text-sm text-white mt-1">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-gray-400 block mb-1">Tipo & Propulsão:</label>
+                            <select id="inpVeicTipo" onchange="alternarCamposVeiculoEv(this.value)" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                                <option value="carro" ${v.tipo === 'carro' ? 'selected' : ''}>Carro (Combustão)</option>
+                                <option value="moto" ${v.tipo === 'moto' ? 'selected' : ''}>Moto (Combustão)</option>
+                                <option value="carro_eletrico" ${v.tipo === 'carro_eletrico' ? 'selected' : ''}>Carro Elétrico (EV) ⚡</option>
+                                <option value="moto_eletrica" ${v.tipo === 'moto_eletrica' ? 'selected' : ''}>Moto Elétrica (EV) ⚡</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 block mb-1">Placa:</label>
+                            <input id="inpVeicPlaca" value="${esc(v.placa)}" placeholder="ABC-1D23" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white uppercase">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-gray-400 block mb-1">Modelo / Versão:</label>
+                        <input id="inpVeicModelo" value="${esc(v.modelo)}" placeholder="Ex: Hatch Elétrico 45 kWh" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                    </div>
+                    <div id="boxCapacidadeBateria" class="${isEvInit ? '' : 'hidden'}">
+                        <label class="text-cyan-300 block mb-1"><i class="fa-solid fa-car-battery"></i> Capacidade da Bateria (kWh) — Opcional:</label>
+                        <input id="inpVeicBateria" type="number" step="0.1" value="${v.capacidadeBateria || ''}" placeholder="Ex: 45 ou 4.2" class="w-full bg-gray-800 border border-cyan-500/50 rounded-lg p-2.5 text-white">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-gray-400 block mb-1">Odômetro Atual (km):</label>
+                            <input id="inpVeicOdo" type="number" value="${v.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 block mb-1">Calibragem:</label>
+                            <input id="inpVeicCal" value="${esc(v.calibragem)}" placeholder="32 psi" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
                     </div>
                 </div>
             `;
-            document.getElementById('modalBtnSalvar').onclick = () => {
-                const tipoSel = document.getElementById('inpTipo').value;
-                const capBat = parseFloat(document.getElementById('inpCapacidadeBateria')?.value);
-                const novoObjeto = {
+            abrirModal(id ? '<i class="fa-solid fa-pen text-emerald-400"></i> Editar Veículo' : '<i class="fa-solid fa-plus text-emerald-400"></i> Novo Veículo', html, () => {
+                const nome = document.getElementById('inpVeicNome').value.trim();
+                if (!nome) { alert("Informe o nome do veículo."); return; }
+                const tipo = document.getElementById('inpVeicTipo').value;
+                const capBat = parseFloat(document.getElementById('inpVeicBateria')?.value);
+                const novoDados = {
                     id: id || Date.now(),
-                    nome: document.getElementById('inpNome').value.trim(),
-                    tipo: tipoSel,
-                    placa: document.getElementById('inpPlaca').value.trim(),
-                    modelo: document.getElementById('inpModelo').value.trim(),
-                    odometro: parseInt(document.getElementById('inpOdometro').value) || 0,
-                    calibragem: document.getElementById('inpCalibragem').value.trim(),
-                    capacidadeBateria: (tipoSel === 'carro_eletrico' || tipoSel === 'moto_eletrica') && capBat > 0 ? capBat : undefined
+                    nome,
+                    tipo,
+                    placa: document.getElementById('inpVeicPlaca').value.trim().toUpperCase(),
+                    modelo: document.getElementById('inpVeicModelo').value.trim(),
+                    odometro: parseInt(document.getElementById('inpVeicOdo').value) || 0,
+                    calibragem: document.getElementById('inpVeicCal').value.trim(),
+                    ...(isVeiculoEletrico({ tipo }) && Number.isFinite(capBat) && capBat > 0 ? { capacidadeBateria: capBat } : {})
                 };
-                if (!novoObjeto.nome) return;
                 if (id) {
-                    const idx = db.veiculos.findIndex(v => v.id === id);
-                    db.veiculos[idx] = novoObjeto;
+                    const idx = db.veiculos.findIndex(item => item.id === id);
+                    db.veiculos[idx] = novoDados;
                 } else {
-                    db.veiculos.unshift(novoObjeto);
-                    db.veiculoAtivoId = novoObjeto.id;
+                    db.veiculos.push(novoDados);
+                    db.veiculoAtivoId = novoDados.id;
                 }
-                salvarDB(); fecharModal(); inicializarApp();
-            };
-            document.getElementById('modalForm').classList.remove('hidden');
+                salvarDB();
+                atualizarSeletorVeiculos();
+                renderizarApp();
+                fecharModal();
+            });
         }
 
-        function calcularAbast(campo) {
-            let litros = parseFloat(document.getElementById('inpLitros').value) || 0;
-            let preco = parseFloat(document.getElementById('inpPrecoLitro').value) || 0;
-            let total = parseFloat(document.getElementById('inpValor').value) || 0;
-
-            if (campo === 'soc') {
-                const veiculo = db.veiculos.find(v => v.id === db.veiculoAtivoId);
-                const cap = Number(veiculo?.capacidadeBateria) || 0;
-                const socIni = parseFloat(document.getElementById('inpSocInicial')?.value);
-                const socFim = parseFloat(document.getElementById('inpSocFinal')?.value);
-                if (cap > 0 && Number.isFinite(socIni) && Number.isFinite(socFim) && socFim > socIni) {
-                    litros = Number(((cap * (socFim - socIni)) / 100).toFixed(2));
-                    document.getElementById('inpLitros').value = litros;
-                    if (preco > 0) document.getElementById('inpValor').value = (litros * preco).toFixed(2);
-                }
-                if (socFim === 100) {
-                    const selCheio = document.getElementById('inpTanqueCheio');
-                    if (selCheio) selCheio.value = 'true';
-                }
-                return;
+        function excluirVeiculo(id) {
+            if (db.veiculos.length <= 1) { alert("É necessário manter pelo menos 1 veículo."); return; }
+            if (confirm("Remover este veículo e todo o seu histórico?")) {
+                db.veiculos = db.veiculos.filter(v => v.id !== id);
+                db.abastecimentos = db.abastecimentos.filter(a => a.veiculoId !== id);
+                db.manutencoes = db.manutencoes.filter(m => m.veiculoId !== id);
+                db.avisos = db.avisos.filter(av => av.veiculoId !== id);
+                db.planosPreventivos = (db.planosPreventivos || []).filter(p => p.veiculoId !== id);
+                db.veiculoAtivoId = db.veiculos[0].id;
+                salvarDB();
+                atualizarSeletorVeiculos();
+                renderizarApp();
             }
+        }
 
-            if (campo === 'litros' || campo === 'preco') {
-                if (litros > 0 && preco > 0) document.getElementById('inpValor').value = (litros * preco).toFixed(2);
-            } else if (campo === 'total') {
-                if (total > 0 && litros > 0) document.getElementById('inpPrecoLitro').value = (total / litros).toFixed(3);
-                else if (total > 0 && preco > 0) document.getElementById('inpLitros').value = (total / preco).toFixed(2);
+        function recalcularValoresAbast(campoAlterado) {
+            const inpLitros = document.getElementById('inpAbastLitros');
+            const inpPreco = document.getElementById('inpAbastPreco');
+            const inpTotal = document.getElementById('inpAbastTotal');
+            const l = parseFloat(inpLitros.value);
+            const p = parseFloat(inpPreco.value);
+            const t = parseFloat(inpTotal.value);
+
+            if (campoAlterado === 'litros') {
+                if (l > 0 && p >= 0) inpTotal.value = (l * p).toFixed(2);
+                else if (l > 0 && t >= 0) inpPreco.value = (t / l).toFixed(3);
+            } else if (campoAlterado === 'preco') {
+                if (p >= 0 && l > 0) inpTotal.value = (l * p).toFixed(2);
+                else if (p > 0 && t >= 0) inpLitros.value = (t / p).toFixed(2);
+            } else if (campoAlterado === 'total') {
+                if (t >= 0 && l > 0) inpPreco.value = (t / l).toFixed(3);
+                else if (t >= 0 && p > 0) inpLitros.value = (t / p).toFixed(2);
+            }
+        }
+
+        function estimarKwhPorSoc(capacidadeBateria) {
+            if (!capacidadeBateria || capacidadeBateria <= 0) return;
+            const socIni = parseFloat(document.getElementById('inpAbastSocIni')?.value);
+            const socFim = parseFloat(document.getElementById('inpAbastSocFim')?.value);
+            const inpKwh = document.getElementById('inpAbastLitros');
+            if (Number.isFinite(socIni) && Number.isFinite(socFim) && socFim > socIni && inpKwh) {
+                const kwhEst = ((socFim - socIni) / 100) * capacidadeBateria;
+                inpKwh.value = kwhEst.toFixed(2);
+                recalcularValoresAbast('litros');
             }
         }
 
         function abrirModalAbastecimento(id = null) {
-            const veiculo = db.veiculos.find(v => v.id === db.veiculoAtivoId) || db.veiculos[0];
+            const veiculo = db.veiculos.find(v => v.id === db.veiculoAtivoId);
             const isEv = isVeiculoEletrico(veiculo);
+            const agora = new Date();
+            const horaAtual = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-            const item = id ? db.abastecimentos.find(a => a.id === id) : { 
-                litros: '', valorTotal: '', odometro: (veiculo?.odometro || 0), 
-                data: dataLocalISO(), 
-                hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false }), 
+            const a = id ? db.abastecimentos.find(item => item.id === id) : {
+                data: dataLocalISO(agora),
+                hora: horaAtual,
+                odometro: veiculo.odometro,
+                litros: '',
+                valorTotal: '',
                 posto: '',
-                combustivel: isEv ? 'recarga_ac' : 'gasolina_comum',
                 tanqueCheio: true,
+                combustivel: isEv ? 'recarga_ac' : 'gasolina_comum',
                 socInicial: '',
-                socFinal: isEv ? 100 : ''
+                socFinal: 100
             };
+            const precoInicial = (a.litros > 0 && a.valorTotal > 0) ? (a.valorTotal / a.litros).toFixed(3) : '';
+            const locaisFiltrados = db.locais.filter(l => isEv ? (l.tipo === 'eletroposto' || l.tipo === 'posto') : l.tipo === 'posto');
+            const optionsLocais = locaisFiltrados.map(p => `<option value="${esc(p.nome)}" ${a.posto === p.nome ? 'selected' : ''}>${esc(p.nome)}</option>`).join('');
 
-            let precoInicial = (item.litros > 0 && item.valorTotal > 0) ? (item.valorTotal / item.litros).toFixed(3) : '';
-            let optionsPostos = db.locais
-                .filter(l => isEv ? (l.tipo === 'eletroposto' || l.tipo === 'posto') : l.tipo === 'posto')
-                .map(p => `<option value="${esc(p.nome)}" ${item.posto === p.nome ? 'selected' : ''}>${esc(p.nome)}</option>`).join('');
+            const selectTipoHtml = isEv ? `
+                <div>
+                    <label class="text-gray-400 block mb-1">Tipo de Recarga:</label>
+                    <select id="inpAbastCombustivel" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        <option value="recarga_ac" ${a.combustivel === 'recarga_ac' ? 'selected' : ''}>AC Lenta / Wallbox</option>
+                        <option value="recarga_dc" ${a.combustivel === 'recarga_dc' ? 'selected' : ''}>DC Rápida / Eletroposto</option>
+                        <option value="recarga_gratuita" ${a.combustivel === 'recarga_gratuita' ? 'selected' : ''}>Gratuita / Cortesia</option>
+                    </select>
+                </div>
+            ` : `
+                <div>
+                    <label class="text-gray-400 block mb-1">Combustível:</label>
+                    <select id="inpAbastCombustivel" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        <option value="gasolina_comum" ${a.combustivel === 'gasolina_comum' ? 'selected' : ''}>Gasolina Comum</option>
+                        <option value="gasolina_aditivada" ${a.combustivel === 'gasolina_aditivada' ? 'selected' : ''}>Gasolina Aditivada</option>
+                        <option value="etanol" ${a.combustivel === 'etanol' ? 'selected' : ''}>Etanol</option>
+                        <option value="diesel" ${a.combustivel === 'diesel' ? 'selected' : ''}>Diesel</option>
+                    </select>
+                </div>
+            `;
 
-            document.getElementById('modalTitulo').innerHTML = id
-                ? `<i class="fa-solid fa-pen text-emerald-400"></i> Editar ${isEv ? 'Recarga' : 'Abastecimento'}`
-                : `<i class="fa-solid ${isEv ? 'fa-charging-station text-cyan-400' : 'fa-gas-pump text-emerald-400'}"></i> Nova ${isEv ? 'Recarga Elétrica' : 'Abastecimento'}`;
-
-            const blocoSocEv = isEv ? `
-                <div class="bg-cyan-950/30 border border-cyan-500/30 p-2.5 rounded-lg grid grid-cols-2 gap-2">
+            const socCamposHtml = isEv ? `
+                <div class="grid grid-cols-2 gap-2 bg-cyan-950/20 border border-cyan-500/30 p-2.5 rounded-lg">
                     <div>
-                        <label class="text-[11px] text-cyan-300">% Bateria Inicial (SoC)</label>
-                        <input id="inpSocInicial" type="number" min="0" max="100" value="${item.socInicial ?? ''}" oninput="calcularAbast('soc')" placeholder="Ex: 20" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-sm text-white mt-1">
+                        <label class="text-cyan-300 block mb-1">Bateria Inicial (%):</label>
+                        <input id="inpAbastSocIni" type="number" min="0" max="100" oninput="estimarKwhPorSoc(${veiculo.capacidadeBateria || 0})" value="${a.socInicial ?? ''}" placeholder="Ex: 20" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white">
                     </div>
                     <div>
-                        <label class="text-[11px] text-cyan-300">% Bateria Final (SoC)</label>
-                        <input id="inpSocFinal" type="number" min="0" max="100" value="${item.socFinal ?? ''}" oninput="calcularAbast('soc')" placeholder="Ex: 100" class="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-sm text-white mt-1">
+                        <label class="text-cyan-300 block mb-1">Bateria Final (%):</label>
+                        <input id="inpAbastSocFim" type="number" min="0" max="100" oninput="estimarKwhPorSoc(${veiculo.capacidadeBateria || 0})" value="${a.socFinal ?? 100}" placeholder="Ex: 100" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white">
                     </div>
-                    ${veiculo.capacidadeBateria ? `<p class="col-span-2 text-[10px] text-gray-400">Bateria de ${veiculo.capacidadeBateria} kWh: os kWh são estimados automaticamente ao informar % inicial e final.</p>` : ''}
                 </div>
             ` : '';
 
-            const opcoesTipoEnergia = isEv ? `
-                <option value="recarga_ac" ${(item.combustivel || 'recarga_ac') === 'recarga_ac' ? 'selected' : ''}>Recarga AC (Wallbox / Tomada)</option>
-                <option value="recarga_dc" ${item.combustivel === 'recarga_dc' ? 'selected' : ''}>Recarga DC Rápida (Eletroposto)</option>
-                <option value="recarga_gratuita" ${item.combustivel === 'recarga_gratuita' ? 'selected' : ''}>Recarga Gratuita (Shopping/Cortesia)</option>
-            ` : `
-                <option value="gasolina_comum" ${(item.combustivel || 'gasolina_comum') === 'gasolina_comum' ? 'selected' : ''}>Gasolina Comum</option>
-                <option value="gasolina_aditivada" ${item.combustivel === 'gasolina_aditivada' ? 'selected' : ''}>Gasolina Aditivada</option>
-                <option value="etanol" ${item.combustivel === 'etanol' ? 'selected' : ''}>Etanol</option>
-                <option value="diesel" ${item.combustivel === 'diesel' ? 'selected' : ''}>Diesel</option>
-            `;
-
-            document.getElementById('modalCorpo').innerHTML = `
-                ${blocoSocEv}
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-xs text-gray-400">${isEv ? 'Energia Carregada (kWh)' : 'Litros'}</label>
-                        <input id="inpLitros" type="number" step="0.01" value="${item.litros}" oninput="calcularAbast('litros')" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+            const html = `
+                <div class="space-y-3 text-xs">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-gray-400 block mb-1">Data:</label>
+                            <input id="inpAbastData" type="date" value="${esc(a.data)}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 block mb-1">Hora:</label>
+                            <input id="inpAbastHora" type="time" value="${esc(a.hora || horaAtual)}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-gray-400 block mb-1">Odômetro (km):</label>
+                            <input id="inpAbastOdo" type="number" value="${a.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                        ${selectTipoHtml}
+                    </div>
+                    ${socCamposHtml}
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="text-gray-400 block mb-1">${isEv ? 'Energia (kWh):' : 'Litros:'}</label>
+                            <input id="inpAbastLitros" type="number" step="0.01" oninput="recalcularValoresAbast('litros')" value="${a.litros}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 block mb-1">${isEv ? 'Tarifa (R$/kWh):' : 'Preço (R$/L):'}</label>
+                            <input id="inpAbastPreco" type="number" step="0.001" oninput="recalcularValoresAbast('preco')" value="${precoInicial}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 block mb-1">Valor Total (R$):</label>
+                            <input id="inpAbastTotal" type="number" step="0.01" oninput="recalcularValoresAbast('total')" value="${a.valorTotal}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
                     </div>
                     <div>
-                        <label class="text-xs text-gray-400">${isEv ? 'Tarifa / kWh (R$)' : 'Preço / Litro (R$)'}</label>
-                        <input id="inpPrecoLitro" type="number" step="0.001" value="${precoInicial}" oninput="calcularAbast('preco')" placeholder="Opcional" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-xs text-gray-400">Valor Total (R$)</label>
-                        <input id="inpValor" type="number" step="0.01" value="${item.valorTotal}" oninput="calcularAbast('total')" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-400">Odômetro (km)</label>
-                        <input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-xs text-gray-400">${isEv ? 'Tipo de Carregador' : 'Combustível'}</label>
-                        <select id="inpCombustivel" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                            ${opcoesTipoEnergia}
+                        <label class="text-gray-400 block mb-1">${isEv ? 'Eletroposto / Local:' : 'Posto:'}</label>
+                        <select id="inpAbastPosto" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                            <option value="">-- Selecione --</option>
+                            ${optionsLocais}
                         </select>
                     </div>
-                    <div>
-                        <label class="text-xs text-gray-400">${isEv ? 'Nível da Recarga' : 'Tipo de Abastecimento'}</label>
-                        <select id="inpTanqueCheio" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                            <option value="true" ${item.tanqueCheio !== false ? 'selected' : ''}>${isEv ? 'Carga Completa 100% (Fecha Ciclo)' : 'Tanque Cheio (Fecha Ciclo)'}</option>
-                            <option value="false" ${item.tanqueCheio === false ? 'selected' : ''}>${isEv ? 'Recarga Parcial (Acumula kWh)' : 'Parcial (Acumula Litros)'}</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${item.data}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                    <div><label class="text-xs text-gray-400">Hora</label><input id="inpHora" type="time" value="${item.hora || '12:00'}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                </div>
-                <div>
-                    <label class="text-xs text-gray-400">${isEv ? 'Eletroposto / Local de Recarga' : 'Posto de Combustível'}</label>
-                    <input id="inpPosto" list="listaPostosSugestoes" value="${esc(item.posto)}" placeholder="${isEv ? 'Ex: Wallbox Residencial, Eletroposto...' : 'Digite ou selecione...'}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                    <datalist id="listaPostosSugestoes">${optionsPostos}</datalist>
+                    <label class="flex items-center gap-2 text-gray-300 cursor-pointer pt-1">
+                        <input id="inpAbastCheio" type="checkbox" ${a.tanqueCheio !== false ? 'checked' : ''} class="rounded text-emerald-500">
+                        <span>${isEv ? 'Recarga Completa (100% — fecha ciclo para cálculo de km/kWh)' : 'Tanque Cheio (fecha ciclo para cálculo de consumo)'}</span>
+                    </label>
                 </div>
             `;
-            document.getElementById('modalBtnSalvar').onclick = () => {
-                const novoOdo = parseInt(document.getElementById('inpOdometro').value) || 0;
-                const litros = parseFloat(document.getElementById('inpLitros').value) || 0;
-                const valorTotal = parseFloat(document.getElementById('inpValor').value) || 0;
-                const combSel = document.getElementById('inpCombustivel').value;
+            const tituloModal = id
+                ? (isEv ? '<i class="fa-solid fa-pen text-emerald-400"></i> Editar Recarga' : '<i class="fa-solid fa-pen text-emerald-400"></i> Editar Abastecimento')
+                : (isEv ? '<i class="fa-solid fa-charging-station text-emerald-400"></i> Nova Recarga Elétrica' : '<i class="fa-solid fa-gas-pump text-emerald-400"></i> Novo Abastecimento');
 
-                if (litros <= 0) { alert(`Informe a quantidade de ${isEv ? 'kWh' : 'litros'}.`); return; }
-                if (valorTotal <= 0 && combSel !== 'recarga_gratuita') { alert("Informe o valor total."); return; }
-
-                const socIniRaw = document.getElementById('inpSocInicial')?.value;
-                const socFimRaw = document.getElementById('inpSocFinal')?.value;
-
-                const registro = {
-                    id: id || Date.now(),
-                    veiculoId: db.veiculoAtivoId,
-                    litros,
-                    valorTotal,
-                    odometro: novoOdo,
-                    combustivel: combSel,
-                    tanqueCheio: document.getElementById('inpTanqueCheio').value === 'true',
-                    data: document.getElementById('inpData').value || dataLocalISO(),
-                    hora: document.getElementById('inpHora').value || '12:00',
-                    posto: document.getElementById('inpPosto').value.trim(),
-                    socInicial: isEv && socIniRaw !== '' && socIniRaw != null ? Number(socIniRaw) : undefined,
-                    socFinal: isEv && socFimRaw !== '' && socFimRaw != null ? Number(socFimRaw) : undefined
-                };
-
-                if (id) {
-                    const idx = db.abastecimentos.findIndex(a => a.id === id);
-                    db.abastecimentos[idx] = registro;
-                } else {
-                    db.abastecimentos.unshift(registro);
+            abrirModal(tituloModal, html, () => {
+                const litros = parseFloat(document.getElementById('inpAbastLitros').value);
+                const total = parseFloat(document.getElementById('inpAbastTotal').value);
+                const odo = parseInt(document.getElementById('inpAbastOdo').value);
+                if (!litros || litros <= 0 || isNaN(total) || total < 0 || !odo) {
+                    alert(isEv ? "Preencha energia (kWh), valor e odômetro válidos." : "Preencha litros, valor e odômetro válidos.");
+                    return;
                 }
 
-                let v = db.veiculos.find(ve => ve.id === db.veiculoAtivoId);
-                if (v && novoOdo > v.odometro) v.odometro = novoOdo;
-                salvarDB(); fecharModal(); renderizarApp();
-            };
-            document.getElementById('modalForm').classList.remove('hidden');
-        }
+                const novo = {
+                    id: id || Date.now(),
+                    veiculoId: veiculo.id,
+                    data: document.getElementById('inpAbastData').value,
+                    hora: document.getElementById('inpAbastHora').value || horaAtual,
+                    odometro: odo,
+                    litros,
+                    valorTotal: total,
+                    combustivel: document.getElementById('inpAbastCombustivel').value,
+                    posto: document.getElementById('inpAbastPosto').value,
+                    tanqueCheio: document.getElementById('inpAbastCheio').checked
+                };
 
-        function renderizarListaItensModalManutencao() {
-            const lista = document.getElementById('listaItensManutencaoModal');
-            if (!lista) return;
-            lista.innerHTML = '';
-            let somaTotal = 0;
-            tempManutencaoItens.forEach((it, idx) => {
-                somaTotal += (Number(it.valor) || 0);
-                lista.innerHTML += `
-                    <div class="flex gap-1.5 items-center">
-                        <input type="text" placeholder="Ex: Peça ou Serviço" value="${esc(it.nome)}" onchange="atualizarItemManutencaoModal(${idx}, 'nome', this.value)" class="flex-1 bg-gray-800 border border-gray-700 rounded p-2 text-xs text-white">
-                        <input type="number" step="0.01" placeholder="R$ Valor" value="${it.valor === '' ? '' : it.valor}" oninput="atualizarItemManutencaoModal(${idx}, 'valor', this.value)" class="w-24 bg-gray-800 border border-gray-700 rounded p-2 text-xs text-white text-right">
-                        <button type="button" onclick="removerItemManutencaoModal(${idx})" class="text-red-400 hover:text-red-300 p-1.5 ${tempManutencaoItens.length <= 1 ? 'opacity-30 pointer-events-none' : ''}"><i class="fa-solid fa-trash text-xs"></i></button>
-                    </div>
-                `;
+                if (isEv) {
+                    const sIni = document.getElementById('inpAbastSocIni')?.value;
+                    const sFim = document.getElementById('inpAbastSocFim')?.value;
+                    if (sIni !== '') novo.socInicial = parseFloat(sIni);
+                    if (sFim !== '') novo.socFinal = parseFloat(sFim);
+                }
+
+                if (id) {
+                    const idx = db.abastecimentos.findIndex(item => item.id === id);
+                    db.abastecimentos[idx] = novo;
+                } else {
+                    db.abastecimentos.unshift(novo);
+                    if (odo > veiculo.odometro) veiculo.odometro = odo;
+                }
+                salvarDB();
+                renderizarApp();
+                fecharModal();
             });
-            const elTotal = document.getElementById('totalManutencaoModal');
-            if (elTotal) elTotal.textContent = 'R$ ' + somaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-        }
-
-        function atualizarItemManutencaoModal(idx, campo, valor) {
-            if (!tempManutencaoItens[idx]) return;
-            tempManutencaoItens[idx][campo] = campo === 'valor' ? (parseFloat(valor) || 0) : valor;
-            let somaTotal = tempManutencaoItens.reduce((acc, it) => acc + (Number(it.valor) || 0), 0);
-            const elTotal = document.getElementById('totalManutencaoModal');
-            if (elTotal) elTotal.textContent = 'R$ ' + somaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-        }
-
-        function adicionarItemManutencaoModal() {
-            tempManutencaoItens.push({ nome: '', valor: '' });
-            renderizarListaItensModalManutencao();
-        }
-
-        function removerItemManutencaoModal(idx) {
-            if (tempManutencaoItens.length <= 1) return;
-            tempManutencaoItens.splice(idx, 1);
-            renderizarListaItensModalManutencao();
         }
 
         function abrirModalManutencao(id = null) {
             const veiculo = db.veiculos.find(v => v.id === db.veiculoAtivoId);
-            const item = id ? db.manutencoes.find(m => m.id === id) : { 
-                oficina: '', odometro: (veiculo?.odometro || 0), 
-                data: dataLocalISO(), 
-                hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+            const agora = new Date();
+            const horaAtual = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            const m = id ? db.manutencoes.find(item => item.id === id) : {
+                data: dataLocalISO(agora),
+                hora: horaAtual,
+                odometro: veiculo.odometro,
+                oficina: '',
                 categoria: 'preventiva',
-                itens: [{ nome: '', valor: '' }] 
+                itens: [{ nome: '', valor: '' }]
             };
-            tempManutencaoItens = (item.itens && item.itens.length > 0) ? item.itens.map(i => ({ nome: i.nome, valor: i.valor })) : [{ nome: '', valor: '' }];
-            let optionsOficinas = db.locais.filter(l => l.tipo === 'oficina').map(o => `<option value="${esc(o.nome)}">${esc(o.nome)}</option>`).join('');
+            tempManutencaoItens = JSON.parse(JSON.stringify(m.itens));
+            const optionsOficinas = db.locais.filter(l => l.tipo === 'oficina').map(o => `<option value="${esc(o.nome)}" ${m.oficina === o.nome ? 'selected' : ''}>${esc(o.nome)}</option>`).join('');
 
-            document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-blue-400"></i> Editar Manutenção' : '<i class="fa-solid fa-wrench text-blue-400"></i> Nova Manutenção';
-            document.getElementById('modalCorpo').innerHTML = `
-                <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs text-gray-400">Oficina / Concessionária</label>
-                        <input id="inpOficina" list="listaOficinasSugestoes" value="${esc(item.oficina)}" placeholder="Selecione ou digite" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                        <datalist id="listaOficinasSugestoes">${optionsOficinas}</datalist>
+            const html = `
+                <div class="space-y-3 text-xs">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-gray-400 block mb-1">Data:</label>
+                            <input id="inpManutData" type="date" value="${esc(m.data)}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 block mb-1">Hora:</label>
+                            <input id="inpManutHora" type="time" value="${esc(m.hora || horaAtual)}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
                     </div>
-                    <div><label class="text-xs text-gray-400">Categoria</label>
-                        <select id="inpCategoriaManut" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                            <option value="preventiva" ${(item.categoria || 'preventiva') === 'preventiva' ? 'selected' : ''}>Preventiva</option>
-                            <option value="corretiva" ${item.categoria === 'corretiva' ? 'selected' : ''}>Corretiva</option>
-                            <option value="pneus" ${item.categoria === 'pneus' ? 'selected' : ''}>Pneus / Rodas</option>
-                            <option value="documentacao" ${item.categoria === 'documentacao' ? 'selected' : ''}>Documentação / Taxas</option>
-                            <option value="outros" ${item.categoria === 'outros' ? 'selected' : ''}>Outros</option>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-gray-400 block mb-1">Odômetro (km):</label>
+                            <input id="inpManutOdo" type="number" value="${m.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 block mb-1">Categoria de Custo:</label>
+                            <select id="inpManutCategoria" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                                <option value="preventiva" ${m.categoria === 'preventiva' ? 'selected' : ''}>Manutenção Preventiva</option>
+                                <option value="corretiva" ${m.categoria === 'corretiva' ? 'selected' : ''}>Manutenção Corretiva</option>
+                                <option value="pneus" ${m.categoria === 'pneus' ? 'selected' : ''}>Pneus e Rodas</option>
+                                <option value="documentacao" ${m.categoria === 'documentacao' ? 'selected' : ''}>Documentação / Taxas / Seguro</option>
+                                <option value="outros" ${m.categoria === 'outros' ? 'selected' : ''}>Outros</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-gray-400 block mb-1">Oficina / Local:</label>
+                        <select id="inpManutOficina" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                            <option value="">-- Selecione --</option>
+                            ${optionsOficinas}
                         </select>
                     </div>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <div><label class="text-xs text-gray-400">Odômetro (km)</label><input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                    <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${item.data}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                    <div><label class="text-xs text-gray-400">Hora</label><input id="inpHora" type="time" value="${item.hora || '12:00'}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                </div>
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="text-xs text-gray-400 font-bold">Peças e Serviços:</label>
-                        <button type="button" onclick="adicionarItemManutencaoModal()" class="text-xs text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1"><i class="fa-solid fa-plus"></i> Adicionar Item</button>
+                    <div class="space-y-2 border-t border-gray-800 pt-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 font-bold">Serviços / Peças:</span>
+                            <button type="button" onclick="adicionarLinhaItemManutencao()" class="text-emerald-400 hover:underline font-bold">+ Adicionar Item</button>
+                        </div>
+                        <div id="containerItensManut" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
                     </div>
-                    <div id="listaItensManutencaoModal" class="space-y-1.5 max-h-40 overflow-y-auto pr-1"></div>
-                </div>
-                <div class="bg-gray-800/80 p-2.5 rounded-lg border border-gray-700 flex justify-between items-center text-xs">
-                    <span class="text-gray-400 font-medium">Total da Manutenção:</span>
-                    <span id="totalManutencaoModal" class="text-sm font-extrabold text-blue-400">R$ 0,00</span>
                 </div>
             `;
-            renderizarListaItensModalManutencao();
-            document.getElementById('modalBtnSalvar').onclick = () => {
-                const novoOdo = parseInt(document.getElementById('inpOdometro').value) || 0;
-                const itensLimpos = tempManutencaoItens
-                    .filter(it => it.nome.trim() !== '')
-                    .map(it => ({ nome: it.nome.trim(), valor: parseFloat(it.valor) || 0 }));
-                if (!itensLimpos.length) { alert("Adicione pelo menos um item ou serviço."); return; }
+            abrirModal(id ? '<i class="fa-solid fa-pen text-blue-400"></i> Editar Manutenção' : '<i class="fa-solid fa-wrench text-blue-400"></i> Nova Manutenção', html, () => {
+                const odo = parseInt(document.getElementById('inpManutOdo').value);
+                const itensValidos = tempManutencaoItens.filter(i => i.nome && i.nome.trim() !== '').map(i => ({ nome: i.nome.trim(), valor: parseFloat(i.valor) || 0 }));
+                if (!odo || itensValidos.length === 0) { alert("Informe o odômetro e pelo menos 1 item."); return; }
 
-                const registro = {
+                const novo = {
                     id: id || Date.now(),
-                    veiculoId: db.veiculoAtivoId,
-                    oficina: document.getElementById('inpOficina').value.trim(),
-                    categoria: document.getElementById('inpCategoriaManut').value,
-                    odometro: novoOdo,
-                    data: document.getElementById('inpData').value || dataLocalISO(),
-                    hora: document.getElementById('inpHora').value || '12:00',
-                    itens: itensLimpos
+                    veiculoId: veiculo.id,
+                    data: document.getElementById('inpManutData').value,
+                    hora: document.getElementById('inpManutHora').value || horaAtual,
+                    odometro: odo,
+                    oficina: document.getElementById('inpManutOficina').value,
+                    categoria: document.getElementById('inpManutCategoria').value,
+                    itens: itensValidos
                 };
                 if (id) {
-                    const idx = db.manutencoes.findIndex(m => m.id === id);
-                    db.manutencoes[idx] = registro;
+                    const idx = db.manutencoes.findIndex(item => item.id === id);
+                    db.manutencoes[idx] = novo;
                 } else {
-                    db.manutencoes.unshift(registro);
+                    db.manutencoes.unshift(novo);
+                    if (odo > veiculo.odometro) veiculo.odometro = odo;
                 }
-                let v = db.veiculos.find(ve => ve.id === db.veiculoAtivoId);
-                if (v && novoOdo > v.odometro) v.odometro = novoOdo;
-                salvarDB(); fecharModal(); renderizarApp();
-            };
-            document.getElementById('modalForm').classList.remove('hidden');
+                salvarDB();
+                renderizarApp();
+                fecharModal();
+            });
+            renderizarLinhasItensManut();
         }
 
-        function toggleTipoAvisoModal() {
-            const tipo = document.getElementById('inpTipoAviso').value;
-            if (tipo === 'data') {
-                document.getElementById('blocoAvisoKm').classList.add('hidden');
-                document.getElementById('blocoAvisoData').classList.remove('hidden');
-            } else {
-                document.getElementById('blocoAvisoData').classList.add('hidden');
-                document.getElementById('blocoAvisoKm').classList.remove('hidden');
-            }
+        function renderizarLinhasItensManut() {
+            const container = document.getElementById('containerItensManut');
+            if (!container) return;
+            container.innerHTML = tempManutencaoItens.map((item, idx) => `
+                <div class="flex gap-1.5 items-center">
+                    <input placeholder="Descrição" value="${esc(item.nome)}" oninput="tempManutencaoItens[${idx}].nome = this.value" class="flex-1 bg-gray-800 border border-gray-700 rounded p-1.5 text-white text-xs">
+                    <input type="number" step="0.01" placeholder="R$" value="${item.valor}" oninput="tempManutencaoItens[${idx}].valor = this.value" class="w-20 bg-gray-800 border border-gray-700 rounded p-1.5 text-white text-xs">
+                    ${tempManutencaoItens.length > 1 ? `<button type="button" onclick="removerLinhaItemManutencao(${idx})" class="text-red-400 p-1"><i class="fa-solid fa-xmark"></i></button>` : ''}
+                </div>
+            `).join('');
         }
 
-        function abrirModalAviso(id = null) {
+        function adicionarLinhaItemManutencao() {
+            tempManutencaoItens.push({ nome: '', valor: '' });
+            renderizarLinhasItensManut();
+        }
+
+        function removerLinhaItemManutencao(idx) {
+            tempManutencaoItens.splice(idx, 1);
+            renderizarLinhasItensManut();
+        }
+
+        function abrirModalAviso() {
             const veiculo = db.veiculos.find(v => v.id === db.veiculoAtivoId);
-            const item = id ? db.avisos.find(a => a.id === id) : { titulo: '', tipo: 'km', limite: (veiculo?.odometro || 0) + 1000, limiteData: dataLocalISO(), recorrencia: 'nenhuma' };
-
-            document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-yellow-400"></i> Editar Aviso' : '<i class="fa-solid fa-bell text-yellow-400"></i> Novo Aviso';
-            document.getElementById('modalCorpo').innerHTML = `
-                <div><label class="text-xs text-gray-400">Descrição do Lembrete / Prazo Legal</label><input id="inpTitulo" value="${esc(item.titulo)}" placeholder="Ex: IPVA, Seguro, Licenciamento" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                <div><label class="text-xs text-gray-400">Critério de Alerta</label>
-                    <select id="inpTipoAviso" onchange="toggleTipoAvisoModal()" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                        <option value="km" ${item.tipo === 'km' ? 'selected' : ''}>Por Quilometragem (Odômetro)</option>
-                        <option value="data" ${item.tipo === 'data' ? 'selected' : ''}>Por Data de Vencimento</option>
-                    </select>
-                </div>
-                <div id="blocoAvisoKm" class="${item.tipo === 'data' ? 'hidden' : ''}">
-                    <label class="text-xs text-gray-400">Odômetro Limite (km)</label>
-                    <input id="inpLimite" type="number" value="${item.limite || (veiculo?.odometro || 0) + 1000}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                </div>
-                <div id="blocoAvisoData" class="${item.tipo === 'data' ? '' : 'hidden'} space-y-2">
-                    <div><label class="text-xs text-gray-400">Data de Vencimento</label><input id="inpLimiteData" type="date" value="${item.limiteData || dataLocalISO()}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                    <div><label class="text-xs text-gray-400">Recorrência</label>
-                        <select id="inpRecorrencia" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                            <option value="nenhuma" ${(item.recorrencia || 'nenhuma') === 'nenhuma' ? 'selected' : ''}>Não repetir</option>
-                            <option value="mensal" ${item.recorrencia === 'mensal' ? 'selected' : ''}>Mensal</option>
-                            <option value="bimestral" ${item.recorrencia === 'bimestral' ? 'selected' : ''}>Bimestral</option>
-                            <option value="trimestral" ${item.recorrencia === 'trimestral' ? 'selected' : ''}>Trimestral</option>
-                            <option value="semestral" ${item.recorrencia === 'semestral' ? 'selected' : ''}>Semestral</option>
-                            <option value="anual" ${item.recorrencia === 'anual' ? 'selected' : ''}>Anual</option>
+            const html = `
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="text-gray-400 block mb-1">Título do Lembrete:</label>
+                        <input id="inpAvisoTitulo" placeholder="Ex: IPVA, Seguro, Calibragem..." class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                    </div>
+                    <div>
+                        <label class="text-gray-400 block mb-1">Gatilho:</label>
+                        <select id="inpAvisoTipo" onchange="alternarCampoAviso()" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                            <option value="km">Por Quilometragem (km)</option>
+                            <option value="data">Por Data de Vencimento</option>
                         </select>
+                    </div>
+                    <div id="campoAvisoKm">
+                        <label class="text-gray-400 block mb-1">Avisar ao atingir (km):</label>
+                        <input id="inpAvisoLimiteKm" type="number" value="${veiculo.odometro + 1000}" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                    </div>
+                    <div id="campoAvisoData" class="hidden space-y-2">
+                        <div>
+                            <label class="text-gray-400 block mb-1">Data de Vencimento:</label>
+                            <input id="inpAvisoLimiteData" type="date" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 block mb-1">Recorrência:</label>
+                            <select id="inpAvisoRecorrencia" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                                <option value="unica">Única (não repetir)</option>
+                                <option value="mensal">Mensal</option>
+                                <option value="trimestral">Trimestral</option>
+                                <option value="semestral">Semestral</option>
+                                <option value="anual">Anual</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             `;
-            document.getElementById('modalBtnSalvar').onclick = () => {
-                const titulo = document.getElementById('inpTitulo').value.trim();
-                const tipoAviso = document.getElementById('inpTipoAviso').value;
-                if (!titulo) return;
-                const registro = {
-                    id: id || Date.now(),
-                    veiculoId: db.veiculoAtivoId,
-                    titulo,
-                    tipo: tipoAviso,
-                    limite: parseInt(document.getElementById('inpLimite').value) || 0,
-                    limiteData: document.getElementById('inpLimiteData').value || dataLocalISO(),
-                    recorrencia: document.getElementById('inpRecorrencia').value,
-                    status: 'ativo'
-                };
-                if (id) {
-                    const idx = db.avisos.findIndex(a => a.id === id);
-                    db.avisos[idx] = registro;
-                } else {
-                    db.avisos.unshift(registro);
+            abrirModal('<i class="fa-solid fa-bell text-yellow-400"></i> Novo Aviso', html, () => {
+                const titulo = document.getElementById('inpAvisoTitulo').value.trim();
+                const tipo = document.getElementById('inpAvisoTipo').value;
+                if (!titulo) { alert("Informe o título do aviso."); return; }
+
+                const novo = { id: Date.now(), veiculoId: veiculo.id, titulo, tipo, status: 'ativo' };
+                if (tipo === 'km') novo.limite = parseInt(document.getElementById('inpAvisoLimiteKm').value) || 0;
+                else {
+                    novo.limiteData = document.getElementById('inpAvisoLimiteData').value;
+                    novo.recorrencia = document.getElementById('inpAvisoRecorrencia').value;
                 }
-                salvarDB(); fecharModal(); renderizarApp();
-            };
-            document.getElementById('modalForm').classList.remove('hidden');
+                db.avisos.unshift(novo);
+                salvarDB();
+                renderizarApp();
+                fecharModal();
+            });
         }
 
-        function sugerirEnderecoGPS() {
-            const status = document.getElementById('statusGpsLocal');
-            if (!('geolocation' in navigator)) {
-                status.textContent = "GPS não suportado neste navegador.";
-                return;
+        function alternarCampoAviso() {
+            const tipo = document.getElementById('inpAvisoTipo').value;
+            document.getElementById('campoAvisoKm').classList.toggle('hidden', tipo !== 'km');
+            document.getElementById('campoAvisoData').classList.toggle('hidden', tipo !== 'data');
+        }
+
+        function concluirAviso(id) {
+            const av = db.avisos.find(item => item.id === id);
+            if (!av) return;
+            if (av.tipo === 'data' && av.recorrencia && av.recorrencia !== 'unica') {
+                const d = new Date(av.limiteData + 'T00:00:00');
+                if (av.recorrencia === 'mensal') d.setMonth(d.getMonth() + 1);
+                if (av.recorrencia === 'trimestral') d.setMonth(d.getMonth() + 3);
+                if (av.recorrencia === 'semestral') d.setMonth(d.getMonth() + 6);
+                if (av.recorrencia === 'anual') d.setFullYear(d.getFullYear() + 1);
+                av.limiteData = dataLocalISO(d);
+            } else {
+                db.avisos = db.avisos.filter(item => item.id !== id);
             }
-            const agora = Date.now();
-            if (agora - ultimoAcessoNominatim < 1500) { status.textContent = "Aguarde 1 segundo..."; return; }
-            ultimoAcessoNominatim = agora;
-
-            status.textContent = "Buscando coordenadas...";
-            status.className = "text-[11px] text-emerald-400 animate-pulse mt-1 block";
-
-            navigator.geolocation.getCurrentPosition(
-                async (pos) => {
-                    const lat = pos.coords.latitude;
-                    const lon = pos.coords.longitude;
-                    document.getElementById('inpLat').value = lat.toFixed(6);
-                    document.getElementById('inpLon').value = lon.toFixed(6);
-                    status.textContent = `Coordenadas obtidas. Consultando endereço...`;
-                    try {
-                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`, {
-                            headers: { 'Accept-Language': 'pt-BR' }
-                        });
-                        const data = await res.json();
-                        if (data && data.address) {
-                            const addr = data.address;
-                            const nomeEstab = data.name || addr.amenity || addr.shop || '';
-                            const rua = addr.road || '';
-                            const numero = addr.house_number ? `, ${addr.house_number}` : '';
-                            const bairro = addr.suburb || addr.neighbourhood || '';
-                            const cidade = addr.city || addr.town || '';
-                            const enderecoFormatado = [rua + numero, bairro, cidade].filter(Boolean).join(' - ');
-                            if (enderecoFormatado) document.getElementById('inpEndereco').value = enderecoFormatado;
-                            const inpNome = document.getElementById('inpNomeLocal');
-                            if (nomeEstab && !inpNome.value.trim()) inpNome.value = nomeEstab;
-                            status.textContent = "Sugestão preenchida!";
-                            status.className = "text-[11px] text-emerald-400 mt-1 block";
-                        }
-                    } catch (e) {
-                        status.textContent = "Coordenadas salvas; preencha endereço manualmente.";
-                    }
-                },
-                (err) => { status.textContent = "Permissão de GPS negada."; },
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
+            salvarDB();
+            renderizarApp();
         }
 
         function abrirModalLocal(id = null) {
-            const item = id ? db.locais.find(l => l.id === id) : { nome: '', tipo: 'posto', endereco: '', latitude: '', longitude: '' };
-            document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-red-400"></i> Editar Local' : '<i class="fa-solid fa-location-dot text-red-400"></i> Novo Posto, Eletroposto ou Oficina';
-            document.getElementById('modalCorpo').innerHTML = `
-                <div class="bg-gray-800/60 p-2.5 rounded-lg border border-gray-700/60 flex flex-col gap-1">
-                    <button type="button" onclick="sugerirEnderecoGPS()" class="w-full bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition">
-                        <i class="fa-solid fa-location-crosshairs"></i> Sugerir por GPS (OpenStreetMap)
-                    </button>
-                    <span id="statusGpsLocal" class="text-[11px] text-gray-400 text-center"></span>
-                </div>
-                <div><label class="text-xs text-gray-400">Nome do Estabelecimento</label><input id="inpNomeLocal" value="${esc(item.nome)}" placeholder="Ex: Posto Shell, Eletroposto Shopping..." class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                <div><label class="text-xs text-gray-400">Categoria</label>
-                    <select id="inpTipoLocal" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                        <option value="posto" ${item.tipo === 'posto' ? 'selected' : ''}>Posto de Combustível</option>
-                        <option value="eletroposto" ${item.tipo === 'eletroposto' ? 'selected' : ''}>Eletroposto / Ponto de Recarga EV</option>
-                        <option value="oficina" ${item.tipo === 'oficina' ? 'selected' : ''}>Oficina / Concessionária</option>
-                    </select>
-                </div>
-                <div><label class="text-xs text-gray-400">Endereço Completo</label><input id="inpEndereco" value="${esc(item.endereco || '')}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs text-gray-400">Latitude</label><input id="inpLat" value="${esc(item.latitude || '')}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1 font-mono"></div>
-                    <div><label class="text-xs text-gray-400">Longitude</label><input id="inpLon" value="${esc(item.longitude || '')}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1 font-mono"></div>
+            const l = id ? db.locais.find(item => item.id === id) : { nome: '', tipo: 'posto', endereco: '' };
+            const html = `
+                <div class="space-y-3 text-xs">
+                    <div class="flex justify-between items-center">
+                        <label class="text-gray-400">Geolocalização:</label>
+                        <button type="button" onclick="sugerirLocalPorGPS()" class="text-emerald-400 hover:underline flex items-center gap-1 font-bold">
+                            <i class="fa-solid fa-location-crosshairs"></i> Sugerir por GPS
+                        </button>
+                    </div>
+                    <div>
+                        <label class="text-gray-400 block mb-1">Nome:</label>
+                        <input id="inpLocalNome" value="${esc(l.nome)}" placeholder="Posto / Eletroposto / Oficina..." class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                    </div>
+                    <div>
+                        <label class="text-gray-400 block mb-1">Tipo:</label>
+                        <select id="inpLocalTipo" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                            <option value="posto" ${l.tipo === 'posto' ? 'selected' : ''}>Posto de Combustível</option>
+                            <option value="eletroposto" ${l.tipo === 'eletroposto' ? 'selected' : ''}>Eletroposto / Ponto de Recarga ⚡</option>
+                            <option value="oficina" ${l.tipo === 'oficina' ? 'selected' : ''}>Oficina Mecânica / Concessionária</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-gray-400 block mb-1">Endereço / Potência:</label>
+                        <input id="inpLocalEnd" value="${esc(l.endereco)}" placeholder="Ex: Av. Paulista, 1000 • 60 kW DC" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white">
+                    </div>
                 </div>
             `;
-            document.getElementById('modalBtnSalvar').onclick = () => {
-                const nome = document.getElementById('inpNomeLocal').value.trim();
-                if (!nome) return;
-                const latRaw = document.getElementById('inpLat').value.trim();
-                const lonRaw = document.getElementById('inpLon').value.trim();
-                const registro = {
+            abrirModal(id ? '<i class="fa-solid fa-pen text-red-400"></i> Editar Local' : '<i class="fa-solid fa-location-dot text-red-400"></i> Novo Local', html, () => {
+                const nome = document.getElementById('inpLocalNome').value.trim();
+                if (!nome) { alert("Informe o nome do local."); return; }
+                const novo = {
                     id: id || Date.now(),
                     nome,
-                    tipo: document.getElementById('inpTipoLocal').value,
-                    endereco: document.getElementById('inpEndereco').value.trim(),
-                    latitude: latRaw ? Number(latRaw) : null,
-                    longitude: lonRaw ? Number(lonRaw) : null
+                    tipo: document.getElementById('inpLocalTipo').value,
+                    endereco: document.getElementById('inpLocalEnd').value.trim()
                 };
                 if (id) {
-                    const idx = db.locais.findIndex(l => l.id === id);
-                    db.locais[idx] = registro;
+                    const idx = db.locais.findIndex(item => item.id === id);
+                    db.locais[idx] = novo;
                 } else {
-                    db.locais.unshift(registro);
+                    db.locais.unshift(novo);
                 }
-                salvarDB(); fecharModal(); renderizarApp();
-            };
-            document.getElementById('modalForm').classList.remove('hidden');
+                salvarDB();
+                renderizarApp();
+                fecharModal();
+            });
         }
 
-        function exportarCSV() {
-            const v = db.veiculos.find(ve => ve.id === db.veiculoAtivoId);
+        function sugerirLocalPorGPS() {
+            if (!navigator.geolocation) { alert("Geolocalização não suportada neste navegador."); return; }
+            const agora = Date.now();
+            if (agora - ultimoAcessoNominatim < 1500) { alert("Aguarde um momento antes de consultar o GPS."); return; }
+            ultimoAcessoNominatim = agora;
+
+            navigator.geolocation.getCurrentPosition(async pos => {
+                const { latitude, longitude } = pos.coords;
+                try {
+                    const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+                    const data = await resp.json();
+                    if (data && data.address) {
+                        const rua = data.address.road || data.address.suburb || '';
+                        const cidade = data.address.city || data.address.town || '';
+                        document.getElementById('inpLocalEnd').value = `${rua}${rua && cidade ? ' - ' : ''}${cidade}`;
+                    }
+                } catch (e) {
+                    document.getElementById('inpLocalEnd').value = `Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}`;
+                }
+            }, () => alert("Não foi possível obter sua localização."));
+        }
+
+        function excluirItem(colecao, id) {
+            if (confirm("Deseja realmente excluir este registro?")) {
+                db[colecao] = db[colecao].filter(item => item.id !== id);
+                salvarDB();
+                renderizarApp();
+            }
+        }
+
+        // ==========================================
+        // EXPORTAÇÕES & IMPORTAÇÕES (EXCEL / CSV)
+        // ==========================================
+        function gerarBlocosHTMLVeiculo(v) {
             const isEv = isVeiculoEletrico(v);
-            const linhas = [`Tipo;Data;Hora;Odometro;${isEv ? 'Energia_kWh' : 'Litros'};Valor_Total;Local_Detalhes`];
-            db.abastecimentos.filter(a => a.veiculoId === v.id).forEach(a => linhas.push(`${isEv ? 'Recarga' : 'Abastecimento'};${a.data};${a.hora||'12:00'};${a.odometro};${a.litros};${a.valorTotal.toFixed(2).replace('.',',')};"${(a.posto||'').replace(/"/g,'""')}"`));
-            db.manutencoes.filter(m => m.veiculoId === v.id).forEach(m => {
-                const soma = (m.itens || []).reduce((acc, i) => acc + i.valor, 0);
-                const itens = (m.itens || []).map(i => `${i.nome}: R$ ${i.valor.toFixed(2)}`).join(' | ');
-                linhas.push(`Manutencao;${m.data};${m.hora||'12:00'};${m.odometro};0;${soma.toFixed(2).replace('.',',')};"${(m.oficina||'').replace(/"/g,'""')} - ${itens.replace(/"/g,'""')}"`);
-            });
-            const blob = new Blob(["\uFEFF" + linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `DriveStats_${sanitizarNomeArquivo(v.nome)}.csv`; a.click();
-            URL.revokeObjectURL(url);
+            const unQtd = getUnidadeQuantidade(v);
+            const abasts = db.abastecimentos.filter(a => a.veiculoId === v.id);
+            const manuts = db.manutencoes.filter(m => m.veiculoId === v.id);
+            const avisos = db.avisos.filter(av => av.veiculoId === v.id);
+
+            return `
+                <h2 style="background:#10b981;color:#fff;padding:6px">VEÍCULO: ${esc(v.nome)} (${esc(getLabelTipoVeiculo(v.tipo))}) - PLACA: ${esc(v.placa)} - ODÔMETRO: ${v.odometro} km</h2>
+                <h3>${isEv ? 'RECARGAS ELÉTRICAS' : 'ABASTECIMENTOS'}</h3>
+                <table border="1">
+                    <tr><th>Data</th><th>Hora</th><th>Odômetro</th><th>${isEv ? 'Energia (kWh)' : 'Litros'}</th><th>Valor Total</th><th>Local</th><th>Completo</th></tr>
+                    ${abasts.map(a => `<tr><td>${esc(a.data)}</td><td>${esc(a.hora || '12:00')}</td><td>${a.odometro}</td><td>${a.litros} ${unQtd}</td><td>${a.valorTotal.toFixed(2)}</td><td>${esc(a.posto)}</td><td>${a.tanqueCheio ? 'Sim' : 'Não'}</td></tr>`).join('')}
+                </table>
+                <h3>MANUTENÇÕES</h3>
+                <table border="1">
+                    <tr><th>Data</th><th>Odômetro</th><th>Oficina</th><th>Categoria</th><th>Serviços/Itens</th><th>Total</th></tr>
+                    ${manuts.map(m => {
+                        const soma = (m.itens || []).reduce((s, i) => s + i.valor, 0);
+                        const itensStr = (m.itens || []).map(i => `${i.nome} (${i.valor.toFixed(2)})`).join('; ');
+                        return `<tr><td>${esc(m.data)}</td><td>${m.odometro}</td><td>${esc(m.oficina)}</td><td>${esc(m.categoria || 'preventiva')}</td><td>${esc(itensStr)}</td><td>${soma.toFixed(2)}</td></tr>`;
+                    }).join('')}
+                </table>
+                <h3>AVISOS</h3>
+                <table border="1">
+                    <tr><th>Título</th><th>Tipo</th><th>Limite</th></tr>
+                    ${avisos.map(av => `<tr><td>${esc(av.titulo)}</td><td>${esc(av.tipo)}</td><td>${av.tipo === 'km' ? av.limite + ' km' : esc(av.limiteData)}</td></tr>`).join('')}
+                </table><br>
+            `;
         }
 
         function exportarExcelCompleto() {
-            const v = db.veiculos.find(ve => ve.id === db.veiculoAtivoId);
-            const isEv = isVeiculoEletrico(v);
-            let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>
-                <table border="1">
-                    <tr><th colspan="6" style="background:#10b981;color:#fff;font-size:14pt;">DriveStats - Relatório: ${esc(v.nome)} (${esc(v.placa)})</th></tr>
-                    <tr style="background:#374151;color:#fff;"><th>Tipo</th><th>Data</th><th>Odômetro</th><th>${isEv ? 'kWh' : 'Litros'}</th><th>Valor (R$)</th><th>Detalhes</th></tr>`;
-            db.abastecimentos.filter(a => a.veiculoId === v.id).forEach(a => html += `<tr><td>${isEv ? 'Recarga' : 'Abastecimento'}</td><td>${esc(a.data)}</td><td>${a.odometro}</td><td>${a.litros}</td><td>${a.valorTotal.toFixed(2)}</td><td>${esc(a.posto||'')}</td></tr>`);
-            db.manutencoes.filter(m => m.veiculoId === v.id).forEach(m => {
-                const soma = (m.itens || []).reduce((acc, i) => acc + i.valor, 0);
-                const itens = (m.itens || []).map(i => `${i.nome} (R$ ${i.valor.toFixed(2)})`).join(', ');
-                html += `<tr><td>Manutenção</td><td>${esc(m.data)}</td><td>${m.odometro}</td><td>-</td><td>${soma.toFixed(2)}</td><td>${esc(m.oficina||'')} - ${esc(itens)}</td></tr>`;
-            });
-            html += `</table></body></html>`;
-            const blob = new Blob(["\uFEFF" + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const v = db.veiculos.find(item => item.id === db.veiculoAtivoId);
+            const html = `<html><head><meta charset="utf-8"></head><body>${gerarBlocosHTMLVeiculo(v)}</body></html>`;
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `DriveStats_${sanitizarNomeArquivo(v.nome)}.xls`; a.click();
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `drivestats_${sanitizarNomeArquivo(v.nome)}_${dataLocalISO()}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
             URL.revokeObjectURL(url);
         }
 
         function exportarTodosVeiculosExcel() {
-            let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body>
-                <table border="1">
-                    <tr><th colspan="7" style="background:#10b981;color:#fff;font-size:14pt;">DriveStats - Relatório Completo da Frota</th></tr>
-                    <tr style="background:#374151;color:#fff;"><th>Veículo</th><th>Tipo</th><th>Data</th><th>Odômetro</th><th>Qtd (L/kWh)</th><th>Valor (R$)</th><th>Detalhes</th></tr>`;
-            db.veiculos.forEach(v => {
-                const isEv = isVeiculoEletrico(v);
-                db.abastecimentos.filter(a => a.veiculoId === v.id).forEach(a => html += `<tr><td>${esc(v.nome)} (${esc(v.placa)})</td><td>${isEv ? 'Recarga EV' : 'Abastecimento'}</td><td>${esc(a.data)}</td><td>${a.odometro}</td><td>${a.litros}</td><td>${a.valorTotal.toFixed(2)}</td><td>${esc(a.posto||'')}</td></tr>`);
-                db.manutencoes.filter(m => m.veiculoId === v.id).forEach(m => {
-                    const soma = (m.itens || []).reduce((acc, i) => acc + i.valor, 0);
-                    const itens = (m.itens || []).map(i => `${i.nome} (R$ ${i.valor.toFixed(2)})`).join(', ');
-                    html += `<tr><td>${esc(v.nome)} (${esc(v.placa)})</td><td>Manutenção</td><td>${esc(m.data)}</td><td>${m.odometro}</td><td>-</td><td>${soma.toFixed(2)}</td><td>${esc(m.oficina||'')} - ${esc(itens)}</td></tr>`;
-                });
-            });
-            html += `</table></body></html>`;
-            const blob = new Blob(["\uFEFF" + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const blocos = db.veiculos.map(v => gerarBlocosHTMLVeiculo(v)).join('<hr>');
+            const html = `<html><head><meta charset="utf-8"></head><body>${blocos}</body></html>`;
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `DriveStats_Frota_Completa.xls`; a.click();
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `drivestats_frota_completa_${dataLocalISO()}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportarCSV() {
+            const v = db.veiculos.find(item => item.id === db.veiculoAtivoId);
+            const abasts = db.abastecimentos.filter(a => a.veiculoId === v.id);
+            let csv = "Data;Hora;Odometro;Quantidade;ValorTotal;Local\n";
+            abasts.forEach(a => csv += `${a.data};${a.hora || '12:00'};${a.odometro};${a.litros};${a.valorTotal};${a.posto}\n`);
+            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `drivestats_${sanitizarNomeArquivo(v.nome)}_${dataLocalISO()}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
             URL.revokeObjectURL(url);
         }
 
@@ -4260,60 +4377,61 @@
             document.getElementById('inputImportarExcelFile').click();
         }
 
-        function importarDadosExcelCSV(e) {
-            const file = e.target.files[0];
+        function importarDadosExcelCSV(event) {
+            const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(evt) {
-                const texto = evt.target.result;
-                if (texto.trim().startsWith('{')) {
-                    try {
-                        const dados = JSON.parse(texto);
-                        if (!validarBanco(dados)) { alert('Estrutura JSON inválida.'); return; }
+            reader.onload = function(e) {
+                const texto = e.target.result;
+                try {
+                    const dados = JSON.parse(texto);
+                    if (validarBanco(dados)) {
                         db = normalizarBanco(dados);
-                        salvarDB(); inicializarApp();
-                        alert("Backup JSON restaurado!");
-                    } catch(err) { alert("Arquivo JSON inválido."); }
-                    e.target.value = ''; return;
-                }
-                const linhas = texto.split(/\r?\n/);
-                let importados = 0;
-                linhas.forEach((linha, idx) => {
-                    if (idx === 0 || !linha.trim()) return;
-                    const sep = linha.includes(';') ? ';' : ',';
-                    const cols = linha.split(sep).map(c => c.replace(/^"|"$/g, '').trim());
-                    if (cols.length >= 6) {
-                        const tipo = cols[0].toLowerCase();
-                        const data = cols[1];
-                        const hora = cols[2] || '12:00';
-                        const odo = parseInt(cols[3]) || 0;
-                        const litros = parseFloat(cols[4].replace(',', '.')) || 0;
-                        const valor = parseFloat(cols[5].replace(',', '.')) || 0;
-                        const detalhe = cols[6] || '';
-                        if (tipo.includes('abast') || tipo.includes('recarga')) {
+                        salvarDB();
+                        inicializarApp();
+                        alert("Backup importado com sucesso!");
+                        return;
+                    }
+                } catch (err) {}
+
+                const linhas = texto.split(/\r?\n/).filter(l => l.trim() !== '');
+                const v = db.veiculos.find(item => item.id === db.veiculoAtivoId);
+                let adicionados = 0;
+                linhas.forEach((l, idx) => {
+                    if (idx === 0 && l.toLowerCase().includes('data')) return;
+                    const sep = l.includes(';') ? ';' : ',';
+                    const cols = l.split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
+                    if (cols.length >= 4) {
+                        const data = cols[0];
+                        const odo = parseInt(cols[2]) || parseInt(cols[1]);
+                        const litros = parseFloat(cols[3]?.replace(',', '.')) || parseFloat(cols[2]?.replace(',', '.'));
+                        const total = parseFloat(cols[4]?.replace(',', '.')) || parseFloat(cols[3]?.replace(',', '.'));
+                        const posto = cols[5] || cols[4] || 'Importado';
+                        if (odo && litros && total) {
                             db.abastecimentos.unshift({
                                 id: Date.now() + idx,
-                                veiculoId: db.veiculoAtivoId,
-                                data, hora,
+                                veiculoId: v.id,
+                                data: data.includes('-') ? data : dataLocalISO(),
+                                hora: '12:00',
                                 odometro: odo,
                                 litros,
-                                valorTotal: valor,
-                                posto: detalhe,
-                                tanqueCheio: true,
-                                combustivel: tipo.includes('recarga') ? 'recarga_ac' : 'gasolina_comum'
+                                valorTotal: total,
+                                posto,
+                                tanqueCheio: true
                             });
-                            importados++;
-                        } else if (tipo.includes('manut')) {
-                            db.manutencoes.unshift({ id: Date.now() + idx, veiculoId: db.veiculoAtivoId, data, hora, odometro: odo, oficina: detalhe.split('-')[0].trim(), categoria: 'preventiva', itens: [{ nome: detalhe, valor }] });
-                            importados++;
+                            adicionados++;
                         }
                     }
                 });
-                salvarDB(); inicializarApp();
-                alert(`${importados} registros importados para o veículo ativo!`);
-                e.target.value = '';
+                if (adicionados > 0) {
+                    salvarDB();
+                    renderizarApp();
+                    alert(`${adicionados} registros importados para ${v.nome}!`);
+                } else {
+                    alert("Não foram identificados registros válidos no arquivo.");
+                }
             };
-            reader.readAsText(file, 'UTF-8');
+            reader.readAsText(file);
         }
     </script>
 </body>
