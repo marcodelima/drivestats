@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="overflow-x-hidden">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DriveStats - Gestão e Análise de Veículos</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%2310b981%22><path d=%22M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z%22/></svg>">
     <!-- Tailwind CSS local -->
@@ -13,26 +13,35 @@
     <!-- FontAwesome para ícones -->
     <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
     <style>
-        body { background-color: #0b0f19; color: #f3f4f6; }
+        html, body {
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            max-width: 100vw !important;
+            overflow-x: hidden !important;
+            position: relative;
+        }
+        body {
+            padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+        }
         .subtab-btn.active { border-bottom: 2px solid #10b981; color: #34d399; font-weight: 700; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #111827; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
-        body {
-            padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
-        }
+
+        /* Barra Inferior Fixa travada na largura exata da viewport (100vw) */
         .bottom-nav-bar {
             position: fixed !important;
             bottom: 0 !important;
             left: 0 !important;
-            right: 0 !important;
-            z-index: 40 !important;
+            width: 100vw !important;
+            max-width: 100vw !important;
+            z-index: 50 !important;
             background-color: #111827 !important;
             border-top: 1px solid #1f2937 !important;
-            box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.65) !important;
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
+            box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.75) !important;
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
         }
         .bottom-nav-container {
             display: flex !important;
@@ -42,9 +51,9 @@
             width: 100% !important;
             max-width: 64rem;
             margin: 0 auto;
-            min-height: 56px;
-            padding: 5px 4px calc(5px + env(safe-area-inset-bottom, 0px)) 4px !important;
-            gap: 2px;
+            min-height: 54px;
+            padding: 4px 2px calc(4px + env(safe-area-inset-bottom, 0px)) 2px !important;
+            gap: 1px;
             overflow-x: auto !important;
             overflow-y: hidden !important;
             -webkit-overflow-scrolling: touch;
@@ -54,14 +63,14 @@
             display: none;
         }
         .bottom-nav-btn {
-            flex: 1 0 54px !important;
+            flex: 1 1 0% !important;
+            min-width: 0 !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
             justify-content: center !important;
-            gap: 3px !important;
-            padding: 5px 3px !important;
-            min-width: 52px !important;
+            gap: 2px !important;
+            padding: 5px 1px !important;
             text-align: center !important;
             border-radius: 8px;
             background: transparent;
@@ -69,30 +78,55 @@
             cursor: pointer;
         }
         .bottom-nav-btn i {
-            font-size: 14px !important;
+            font-size: 13px !important;
             line-height: 1 !important;
         }
         .bottom-nav-btn span {
-            font-size: 9.5px !important;
+            font-size: 8.5px !important;
             line-height: 1.1 !important;
-            letter-spacing: -0.01em;
+            letter-spacing: -0.02em;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            width: 100%;
+            max-width: 100%;
             display: block;
         }
         @media (min-width: 640px) {
+            .bottom-nav-btn {
+                padding: 6px 4px !important;
+                gap: 3px !important;
+            }
             .bottom-nav-btn i {
                 font-size: 16px !important;
             }
             .bottom-nav-btn span {
                 font-size: 11px !important;
+                letter-spacing: -0.01em;
             }
         }
         .bottom-nav-btn.nav-ativo {
             background-color: rgba(16, 185, 129, 0.14) !important;
             color: #34d399 !important;
+        }
+
+        /* Trava de largura para containers da aba Análises no mobile */
+        #abaAnalises,
+        #abaAnalises > div,
+        #abaAnalises .grid > div {
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+        }
+        .subtabs-scroll-bar {
+            display: flex;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .subtabs-scroll-bar::-webkit-scrollbar {
+            display: none;
         }
         .modal-dialog-scroll {
             display: flex !important;
