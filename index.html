@@ -31,28 +31,37 @@
             background-color: #111827 !important;
             border-top: 1px solid #1f2937 !important;
             box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.65) !important;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
         }
         .bottom-nav-container {
             display: flex !important;
             flex-direction: row !important;
             align-items: stretch !important;
-            justify-content: space-around !important;
+            justify-content: space-between !important;
             width: 100% !important;
             max-width: 64rem;
             margin: 0 auto;
-            min-height: 54px;
+            min-height: 56px;
             padding: 5px 4px calc(5px + env(safe-area-inset-bottom, 0px)) 4px !important;
             gap: 2px;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .bottom-nav-container::-webkit-scrollbar {
+            display: none;
         }
         .bottom-nav-btn {
-            flex: 1 1 0% !important;
+            flex: 1 0 54px !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
             justify-content: center !important;
             gap: 3px !important;
-            padding: 5px 2px !important;
-            min-width: 0 !important;
+            padding: 5px 3px !important;
+            min-width: 52px !important;
             text-align: center !important;
             border-radius: 8px;
             background: transparent;
@@ -114,6 +123,64 @@
             background: #10b981;
             border-radius: 4px;
         }
+
+        /* ==========================================
+           ANIMAÇÕES DA ABA GUIA ("COMO USAR")
+           ========================================== */
+        @keyframes guiaFloatSlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+        @keyframes guiaSyncPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+            50% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        }
+        @keyframes guiaPacketFlow {
+            0% { left: 4px; opacity: 0; transform: translateY(-50%) scale(0.8); }
+            15% { opacity: 1; transform: translateY(-50%) scale(1); }
+            85% { opacity: 1; transform: translateY(-50%) scale(1); }
+            100% { left: calc(100% - 18px); opacity: 0; transform: translateY(-50%) scale(0.8); }
+        }
+        @keyframes guiaRadarWave {
+            0% { transform: scale(0.65); opacity: 0.85; }
+            100% { transform: scale(2.15); opacity: 0; }
+        }
+        @keyframes guiaGaugeNeedle {
+            0%, 100% { transform: rotate(-28deg); }
+            50% { transform: rotate(34deg); }
+        }
+        @keyframes guiaBarSweep {
+            0% { width: 14%; }
+            50% { width: 84%; }
+            100% { width: 14%; }
+        }
+
+        .guia-anim-float { animation: guiaFloatSlow 3.2s ease-in-out infinite; }
+        .guia-anim-sync { animation: guiaSyncPulse 2.2s ease-in-out infinite; }
+        .guia-anim-packet { animation: guiaPacketFlow 2.6s linear infinite; }
+        .guia-anim-radar { animation: guiaRadarWave 2s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+        .guia-anim-needle { transform-origin: bottom center; animation: guiaGaugeNeedle 3s ease-in-out infinite; }
+        .guia-anim-bar { animation: guiaBarSweep 4.5s ease-in-out infinite; }
+
+        .guia-pausado .guia-anim-float,
+        .guia-pausado .guia-anim-sync,
+        .guia-pausado .guia-anim-packet,
+        .guia-pausado .guia-anim-radar,
+        .guia-pausado .guia-anim-needle,
+        .guia-pausado .guia-anim-bar {
+            animation-play-state: paused !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .guia-anim-float,
+            .guia-anim-sync,
+            .guia-anim-packet,
+            .guia-anim-radar,
+            .guia-anim-needle,
+            .guia-anim-bar {
+                animation: none !important;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col font-sans pb-20 sm:pb-24">
@@ -127,7 +194,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-extrabold text-emerald-400 tracking-wide">DriveStats</h1>
-                    <p class="text-xs text-gray-400">Gestão & Análise Inteligente de Frotas</p>
+                    <p class="text-xs text-gray-400">Gestão & Análise Inteligente de Frotas • v6.3</p>
                 </div>
             </div>
 
@@ -346,7 +413,6 @@
 
             <!-- SUB-ABA 1: CONSUMO & COMBUSTÍVEIS -->
             <div id="subaba_consumo" class="space-y-6">
-                <!-- GRID DE INDICADORES DE CONSUMO -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                     <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl shadow">
                         <span class="text-[11px] text-gray-400 flex items-center gap-1"><i class="fa-solid fa-gauge-high text-emerald-400"></i> Média no Período</span>
@@ -380,12 +446,9 @@
                     </div>
                 </div>
 
-                <!-- AVISO DE METODOLOGIA E PARCIAIS -->
                 <div id="boxStatusCiclos" class="text-xs bg-gray-900 border border-gray-800 p-3 rounded-xl flex items-center justify-between gap-2">
-                    <!-- Injetado por JS -->
                 </div>
 
-                <!-- GRÁFICO HISTÓRICO DE CONSUMO + MÉDIA MÓVEL -->
                 <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
                         <div>
@@ -400,9 +463,7 @@
                     </div>
                 </div>
 
-                <!-- COMPARADOR DE POSTOS & COMPARADOR FLEX (GASOLINA X ETANOL) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- COMPARADOR DE POSTOS -->
                     <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow space-y-3">
                         <h3 class="text-sm font-bold text-white flex items-center gap-2">
                             <i class="fa-solid fa-location-dot text-red-400"></i> Comparação de Preços por Posto
@@ -411,7 +472,6 @@
                         <div id="tabelaRankingPostos" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-xs"></div>
                     </div>
 
-                    <!-- COMPARADOR GASOLINA X ETANOL (REGRA DOS 70%) -->
                     <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow space-y-3">
                         <h3 class="text-sm font-bold text-white flex items-center gap-2">
                             <i class="fa-solid fa-scale-balanced text-yellow-400"></i> Comparador Flex (Gasolina vs Etanol)
@@ -447,7 +507,6 @@
                     </div>
                 </div>
 
-                <!-- GRÁFICOS FINANCEIROS: PARTICIPAÇÃO POR CATEGORIA E EVOLUÇÃO MENSAL -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow space-y-2">
                         <h3 class="text-sm font-bold text-white flex items-center gap-2">
@@ -468,7 +527,6 @@
                     </div>
                 </div>
 
-                <!-- TABELA DETALHADA POR CATEGORIA -->
                 <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow space-y-3">
                     <h3 class="text-sm font-bold text-white flex items-center gap-2">
                         <i class="fa-solid fa-table-list text-yellow-400"></i> Demonstrativo Operacional de Custos
@@ -496,7 +554,6 @@
                     </div>
                 </div>
 
-                <!-- CARDS DE PLANOS PREVENTIVOS -->
                 <div id="listaPlanosPreventivos" class="space-y-3"></div>
             </div>
 
@@ -605,7 +662,6 @@
         <div id="abaAjustes" class="tab-content hidden space-y-6">
             <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-gear text-gray-300"></i> Ajustes e Banco de Dados</h2>
             
-            <!-- GESTÃO DE VEÍCULOS/FROTA -->
             <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl space-y-3 shadow-md">
                 <div class="flex justify-between items-center">
                     <div>
@@ -619,7 +675,6 @@
                 <div id="listaGerenciarVeiculos" class="space-y-2 pt-2"></div>
             </div>
 
-            <!-- PARÂMETROS DE INTELIGÊNCIA & ALERTAS -->
             <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl space-y-3 shadow-md">
                 <h3 class="font-bold text-sm text-yellow-400 flex items-center gap-2"><i class="fa-solid fa-sliders"></i> Parâmetros dos Indicadores e Alertas</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
@@ -638,7 +693,6 @@
                 </div>
             </div>
 
-            <!-- BATERIA DE TESTES AUTOMATIZADOS (14 CENÁRIOS OBRIGATÓRIOS) -->
             <div class="bg-gray-900 border border-emerald-500/40 p-4 rounded-xl space-y-3 shadow-md">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
@@ -653,7 +707,6 @@
                 </div>
             </div>
 
-            <!-- SINCRONIZAÇÃO AUTOMÁTICA .TXT -->
             <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl space-y-3 shadow-md">
                 <h3 class="font-bold text-sm text-emerald-400 flex items-center gap-2"><i class="fa-solid fa-database"></i> Sincronização em Tempo Real (.TXT / Google Drive)</h3>
                 <p class="text-xs text-gray-400">Vincule o arquivo de backup `.txt` no Google Drive. Cada alteração é gravada na mesma hora.</p>
@@ -667,7 +720,6 @@
                 </div>
             </div>
 
-            <!-- EXPORTAR DADOS E RELATÓRIOS -->
             <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl space-y-3 shadow-md">
                 <h3 class="font-bold text-sm text-yellow-400 flex items-center gap-2"><i class="fa-solid fa-file-export"></i> Exportar Relatórios</h3>
                 <div class="flex flex-wrap gap-2 pt-1">
@@ -683,7 +735,6 @@
                 </div>
             </div>
 
-            <!-- IMPORTAR TABELAS -->
             <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl space-y-3 shadow-md">
                 <h3 class="font-bold text-sm text-blue-400 flex items-center gap-2"><i class="fa-solid fa-file-import"></i> Importar Tabelas / Backups</h3>
                 <div class="flex flex-wrap gap-2 pt-1">
@@ -696,24 +747,27 @@
 
         </div>
 
-        <!-- ABA 8: GUIA COMO USAR -->
+        <!-- ABA 8: GUIA COMO USAR (COM 6 ANIMAÇÕES INTERATIVAS & CSS) -->
         <div id="abaComoUsar" class="tab-content hidden space-y-6">
             
             <!-- BANNER PRINCIPAL DO GUIA -->
             <div class="bg-gradient-to-r from-emerald-950/80 via-gray-900 to-blue-950/80 border border-emerald-500/50 rounded-2xl p-5 shadow-2xl relative overflow-hidden">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div class="space-y-1">
-                        <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] uppercase font-mono font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                            <i class="fa-solid fa-graduation-cap"></i> Guia Rápido do Usuário
+                        <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] uppercase font-mono font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 guia-anim-float">
+                            <i class="fa-solid fa-graduation-cap"></i> Guia Rápido Animado • v6.3
                         </span>
                         <h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
                             Como Usar o DriveStats
                         </h2>
                         <p class="text-xs text-gray-300 max-w-2xl leading-relaxed">
-                            Aprenda em 6 passos simples como sincronizar seu arquivo local no Google Drive, cadastrar veículos, registrar abastecimentos e manutenções, acompanhar o consumo real e automatizar preventivas.
+                            Aprenda em 6 passos visuais e animados como sincronizar seu arquivo local no Google Drive, cadastrar veículos, registrar abastecimentos e manutenções, acompanhar o consumo real e automatizar preventivas.
                         </p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button id="btnToggleAnimGuia" onclick="alternarAnimacoesGuia()" class="bg-gray-800 hover:bg-gray-700 text-emerald-300 border border-emerald-500/40 font-bold px-3 py-2 rounded-xl text-xs transition flex items-center gap-1.5 whitespace-nowrap">
+                            <i class="fa-solid fa-pause"></i> <span>Pausar Animações</span>
+                        </button>
                         <button onclick="mudarAba('VisaoGeral')" class="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-extrabold px-3.5 py-2 rounded-xl text-xs transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 whitespace-nowrap">
                             <i class="fa-solid fa-arrow-left"></i> Ir para o Resumo
                         </button>
@@ -731,10 +785,10 @@
                 </div>
             </div>
 
-            <!-- PASSO 1: VINCULAR E SINCRONIZAR ARQUIVO TXT -->
+            <!-- ANIMAÇÃO 1: PASSO 1 - FLUXO DE SINCRONIZAÇÃO LOCAL-FIRST -->
             <div id="passo1_txt" class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg space-y-4">
                 <div class="flex items-center gap-3">
-                    <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold flex items-center justify-center text-sm border border-emerald-500/30">1</span>
+                    <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold flex items-center justify-center text-sm border border-emerald-500/30 guia-anim-sync">1</span>
                     <div>
                         <h3 class="text-base font-bold text-white flex items-center gap-2">
                             <i class="fa-solid fa-folder-open text-emerald-400"></i> Vincular e Sincronizar com o Google Drive
@@ -747,13 +801,40 @@
                     O DriveStats não envia os dados do seu veículo para nenhum banco de dados ou servidor na internet. Todas as informações ficam salvas em um arquivo de texto local (<code class="text-emerald-400 font-mono">drivestats_db.txt</code>) que reside na pasta sincronizada do seu Google Drive.
                 </p>
 
-                <!-- FIGURA / SIMULAÇÃO VISUAL REAL DO DRIVE STATS -->
-                <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-3">
-                    <span class="text-[10px] uppercase font-mono text-gray-500 block">Demonstração Visual da Barra de Status:</span>
-                    
+                <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] uppercase font-mono text-gray-500">Animação 1 • Fluxo de Gravação em Tempo Real:</span>
+                        <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">Local-First Ativo</span>
+                    </div>
+
+                    <!-- FLUXO ANIMADO: NAVEGADOR -> ARQUIVO TXT -> GOOGLE DRIVE -->
+                    <div class="grid grid-cols-3 items-center gap-2 text-center text-xs">
+                        <div class="bg-gray-900 border border-gray-800 p-2.5 rounded-xl guia-anim-float">
+                            <i class="fa-solid fa-browser text-emerald-400 text-lg block mb-1"></i>
+                            <span class="font-bold text-white block text-[11px]">DriveStats</span>
+                            <span class="text-[10px] text-gray-400">Você lança dados</span>
+                        </div>
+                        <div class="bg-gray-900 border border-emerald-500/40 p-2.5 rounded-xl guia-anim-sync">
+                            <i class="fa-solid fa-file-lines text-emerald-400 text-lg block mb-1"></i>
+                            <span class="font-bold text-emerald-300 block text-[11px] font-mono">drivestats_db.txt</span>
+                            <span class="text-[10px] text-gray-400">Salvo no disco</span>
+                        </div>
+                        <div class="bg-gray-900 border border-gray-800 p-2.5 rounded-xl guia-anim-float">
+                            <i class="fa-brands fa-google-drive text-blue-400 text-lg block mb-1"></i>
+                            <span class="font-bold text-white block text-[11px]">Google Drive</span>
+                            <span class="text-[10px] text-gray-400">Sincroniza nuvem</span>
+                        </div>
+                    </div>
+
+                    <!-- TRILHA COM PACOTE ANIMADO -->
+                    <div class="relative h-5 flex items-center px-1">
+                        <div class="w-full h-0.5 bg-gradient-to-r from-emerald-500/40 via-emerald-400 to-blue-400/50 rounded-full"></div>
+                        <span class="guia-anim-packet absolute w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-md shadow-emerald-400/70 border-2 border-gray-950"></span>
+                    </div>
+
                     <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-2 text-xs">
                         <div class="flex items-center gap-2">
-                            <span class="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></span>
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 guia-anim-sync"></span>
                             <span class="text-white font-bold">Sincronizado com: drivestats_db.txt</span>
                             <span class="text-emerald-400 text-[11px] hidden sm:inline">• Gravação contínua ativa</span>
                         </div>
@@ -766,25 +847,10 @@
                             </span>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-gray-300 pt-1">
-                        <div class="bg-gray-900/80 p-2.5 rounded-lg border border-gray-800">
-                            <strong class="text-emerald-400 block mb-0.5"><i class="fa-solid fa-bolt"></i> Gravação em Tempo Real</strong>
-                            Qualquer abastecimento ou manutenção inserida é gravada no arquivo físico no mesmo instante.
-                        </div>
-                        <div class="bg-gray-900/80 p-2.5 rounded-lg border border-gray-800">
-                            <strong class="text-blue-400 block mb-0.5"><i class="fa-brands fa-google-drive"></i> Sincronização em Nuvem</strong>
-                            O aplicativo do Google Drive sincroniza esse arquivo automaticamente entre seus dispositivos.
-                        </div>
-                        <div class="bg-gray-900/80 p-2.5 rounded-lg border border-gray-800">
-                            <strong class="text-red-400 block mb-0.5"><i class="fa-solid fa-right-from-bracket"></i> Sair & Salvar</strong>
-                            Antes de fechar a aba, utilize este botão para descarregar alterações finais e encerrar com segurança.
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            <!-- PASSO 2: CADASTRAR E ALTERNAR VEÍCULOS -->
+            <!-- ANIMAÇÃO 2: PASSO 2 - VEÍCULOS, ODÔMETRO E CALIBRAGEM -->
             <div id="passo2_veiculos" class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg space-y-4">
                 <div class="flex items-center gap-3">
                     <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold flex items-center justify-center text-sm border border-emerald-500/30">2</span>
@@ -800,31 +866,37 @@
                     Você pode cadastrar quantos carros e motos desejar. Basta clicar no botão verde <strong class="text-emerald-400 font-mono">+ Veículo</strong> no canto superior direito para informar o nome, tipo, placa, odômetro atual e a calibragem recomendada.
                 </p>
 
-                <!-- FIGURA / SIMULAÇÃO VISUAL DO BANNER DO VEÍCULO -->
                 <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-3">
-                    <span class="text-[10px] uppercase font-mono text-gray-500 block">Demonstração Visual do Banner de Veículo Ativo:</span>
-                    
-                    <div class="bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700/80 rounded-2xl p-4 shadow-xl flex justify-between items-start">
-                        <div>
-                            <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">
-                                <i class="fa-solid fa-motorcycle"></i> moto
-                            </span>
-                            <h2 class="text-lg font-extrabold text-white mt-1">Moto Exemplo (Street 250)</h2>
-                            <p class="text-xs text-gray-400">Street 250cc • Placa: <span class="text-gray-200 font-mono">EXA-1A26</span> • Odômetro: <span class="text-emerald-400 font-bold">12.000 km</span></p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xs text-gray-400 block">Calibragem</span>
-                            <span class="text-sm font-bold text-emerald-400"><i class="fa-solid fa-gauge"></i> 29 / 33 psi</span>
+                    <div class="flex flex-wrap justify-between items-center gap-2">
+                        <span class="text-[10px] uppercase font-mono text-gray-500">Animação 2 • Medidor de Calibragem & Frota:</span>
+                        <div class="flex gap-1.5 text-[11px]">
+                            <button type="button" onclick="alternarPreviewGuiaVeiculo('carro')" id="btnGuiaPreviewCarro" class="px-2.5 py-1 rounded-lg font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition">Carro</button>
+                            <button type="button" onclick="alternarPreviewGuiaVeiculo('moto')" id="btnGuiaPreviewMoto" class="px-2.5 py-1 rounded-lg font-bold bg-gray-800 text-gray-400 border border-gray-700 transition">Moto</button>
                         </div>
                     </div>
-
-                    <p class="text-[11px] text-gray-400">
-                        <i class="fa-solid fa-lightbulb text-yellow-400 mr-1"></i> A calibragem configurada fica sempre visível no cabeçalho para consulta rápida quando você estiver calibrando os pneus no posto.
-                    </p>
+                    
+                    <div id="cardGuiaPreviewVeiculo" class="bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700/80 rounded-2xl p-4 shadow-xl flex justify-between items-center gap-3">
+                        <div>
+                            <span id="guiaVeicBadge" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">
+                                <i class="fa-solid fa-car"></i> carro
+                            </span>
+                            <h4 id="guiaVeicNome" class="text-base font-extrabold text-white mt-1">Carro Exemplo (Sedan 1.6)</h4>
+                            <p id="guiaVeicMeta" class="text-xs text-gray-400">Sedan 1.6 Flex • Placa: <span class="text-gray-200 font-mono">BRA-2E19</span> • Odômetro: <span class="text-emerald-400 font-bold">45.000 km</span></p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="relative w-10 h-6 overflow-hidden flex items-end justify-center border-b-2 border-emerald-400/70 rounded-t-full bg-gray-900/90">
+                                <div class="guia-anim-needle w-0.5 h-5 bg-emerald-400 rounded-full"></div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] text-gray-400 block">Calibragem</span>
+                                <span id="guiaVeicPsi" class="text-sm font-bold text-emerald-400"><i class="fa-solid fa-gauge"></i> 32 psi</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- PASSO 3: ABASTECIMENTOS E CONSUMO EXATO -->
+            <!-- ANIMAÇÃO 3: PASSO 3 - CICLO DE ABASTECIMENTO (CHEIO -> PARCIAL -> CHEIO) -->
             <div id="passo3_abast" class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg space-y-4">
                 <div class="flex items-center gap-3">
                     <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold flex items-center justify-center text-sm border border-emerald-500/30">3</span>
@@ -840,38 +912,35 @@
                     Na aba <strong>Postos</strong>, clique em <strong>+ Novo Abastecimento</strong>. Ao digitar os Litros e o Odômetro, o DriveStats calcula automaticamente o consumo real (km/L) e o custo de combustível por quilômetro.
                 </p>
 
-                <!-- FIGURA / SIMULAÇÃO DE ABASTECIMENTO -->
                 <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-3">
-                    <span class="text-[10px] uppercase font-mono text-gray-500 block">Simulação Visual de um Registro de Abastecimento:</span>
-                    
-                    <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
-                        <div>
-                            <p class="font-bold text-white flex items-center flex-wrap gap-1.5">
-                                <span><i class="fa-solid fa-gas-pump text-emerald-400 mr-1"></i> 8.42 L • R$ 54.65</span>
-                                <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-extrabold text-[11px]">
-                                    <i class="fa-solid fa-gauge-high mr-0.5"></i> 32.1 km/L
-                                </span>
-                            </p>
-                            <p class="text-gray-400 mt-0.5">2026-02-05 às 09:00 • 45.000 km • Posto Exemplo - Centro</p>
-                        </div>
-                        <div class="text-right font-mono text-xs text-gray-400">
-                            R$ 6,490/L
-                        </div>
+                    <div class="flex flex-wrap justify-between items-center gap-2">
+                        <span class="text-[10px] uppercase font-mono text-gray-500">Animação 3 • Simulador do Ciclo de Consumo:</span>
+                        <button type="button" onclick="dispararCicloGuiaAbast()" class="bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1">
+                            <i class="fa-solid fa-rotate-right"></i> Repetir Ciclo
+                        </button>
                     </div>
 
-                    <div class="p-3 bg-gray-900/90 border border-emerald-500/30 rounded-xl text-xs space-y-1.5">
-                        <span class="font-bold text-emerald-300 flex items-center gap-1.5">
-                            <i class="fa-solid fa-circle-check"></i> Como funciona a opção "Abastecimento com Tanque Cheio":
-                        </span>
-                        <ul class="list-disc list-inside text-gray-300 space-y-1 text-[11px] leading-relaxed">
-                            <li><strong>Tanque Cheio:</strong> Sempre que você enche o tanque até a trava, o ciclo fecha e o km/L exato daquele trecho é apurado.</li>
-                            <li><strong>Abastecimento Parcial:</strong> Se você colocou apenas alguns litros sem completar o tanque, desmarque a opção. O DriveStats acumulará esses litros e somará na próxima vez que você encher o tanque, calculando o consumo com 100% de precisão sem distorções!</li>
-                        </ul>
+                    <div id="guiaCicloSteps" class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        <div data-step="0" class="guia-ciclo-card bg-gray-900 border border-emerald-500/60 p-3 rounded-xl transition-all duration-300">
+                            <span class="text-[10px] font-mono font-bold text-emerald-400 block">1. TANQUE CHEIO (REF.)</span>
+                            <p class="font-bold text-white mt-0.5">45.000 km • 40,0 L</p>
+                            <p class="text-[11px] text-gray-400 mt-0.5">Marca o início do ciclo de medição.</p>
+                        </div>
+                        <div data-step="1" class="guia-ciclo-card bg-gray-900 border border-gray-800 p-3 rounded-xl transition-all duration-300 opacity-75">
+                            <span class="text-[10px] font-mono font-bold text-yellow-400 block">2. PARCIAL (+15,0 L)</span>
+                            <p class="font-bold text-white mt-0.5">45.250 km • Parcial</p>
+                            <p class="text-[11px] text-gray-400 mt-0.5">Acumula litros sem distorcer o km/L.</p>
+                        </div>
+                        <div data-step="2" class="guia-ciclo-card bg-gray-900 border border-gray-800 p-3 rounded-xl transition-all duration-300 opacity-75">
+                            <span class="text-[10px] font-mono font-bold text-emerald-400 block">3. TANQUE CHEIO (+25,0 L)</span>
+                            <p class="font-bold text-white mt-0.5">45.600 km • <span class="text-emerald-400">15.0 km/L</span></p>
+                            <p class="text-[11px] text-gray-400 mt-0.5">600 km ÷ (15 + 25 = 40 L) = 15,0 km/L.</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- PASSO 4: MANUTENÇÕES, PEÇAS E CUSTOS DE OFICINA -->
+            <!-- ANIMAÇÃO 4: PASSO 4 - MANUTENÇÕES E DISTRIBUIÇÃO DE CUSTOS -->
             <div id="passo4_oficina" class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg space-y-4">
                 <div class="flex items-center gap-3">
                     <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold flex items-center justify-center text-sm border border-emerald-500/30">4</span>
@@ -887,43 +956,32 @@
                     Na aba <strong>Oficina</strong>, registre todas as visitas ao mecânico ou concessionária. Cada manutenção permite adicionar múltiplos itens (ex: óleo, filtros, pastilhas, mão de obra) com seus valores específicos e somatório automático.
                 </p>
 
-                <!-- FIGURA / SIMULAÇÃO DE MANUTENÇÃO -->
                 <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-3">
-                    <span class="text-[10px] uppercase font-mono text-gray-500 block">Simulação Visual de uma Manutenção Registrada:</span>
-                    
-                    <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
-                        <div>
-                            <p class="font-bold text-white">
-                                <i class="fa-solid fa-wrench text-blue-400 mr-1"></i> Oficina Modelo - R$ 350,00 
-                                <span class="text-[10px] uppercase font-bold text-blue-400 ml-1.5 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded">Preventiva</span>
-                            </p>
-                            <p class="text-gray-400 mt-0.5">40.000 km • Troca de Óleo e Filtros (R$ 350,00)</p>
-                        </div>
-                        <span class="font-mono font-bold text-emerald-400 text-sm">R$ 350,00</span>
+                    <div class="flex flex-wrap justify-between items-center gap-2">
+                        <span class="text-[10px] uppercase font-mono text-gray-500">Animação 4 • Barras de Categorias & Soma de Itens:</span>
+                        <button type="button" onclick="animarBarrasGuiaOficina()" class="bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1">
+                            <i class="fa-solid fa-chart-simple"></i> Simular Valores
+                        </button>
                     </div>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-gray-300">
-                        <div class="bg-gray-900 p-2 rounded-lg border border-gray-800 text-center">
-                            <strong class="text-blue-400 block">Preventiva</strong>
-                            Óleo, filtros, revisões
+                    <div class="space-y-2 text-xs">
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1"><span class="text-blue-400 font-semibold">Preventiva (Óleo, Filtros, Revisões)</span><span id="guiaBarraPrevTxt" class="font-mono text-gray-300">R$ 350,00</span></div>
+                            <div class="w-full bg-gray-800 rounded-full h-2 overflow-hidden"><div id="guiaBarraPrev" class="bg-blue-500 h-2 rounded-full transition-all duration-700" style="width: 65%"></div></div>
                         </div>
-                        <div class="bg-gray-900 p-2 rounded-lg border border-gray-800 text-center">
-                            <strong class="text-yellow-400 block">Corretiva</strong>
-                            Consertos, quebras
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1"><span class="text-yellow-400 font-semibold">Corretiva (Consertos e Peças)</span><span id="guiaBarraCorrTxt" class="font-mono text-gray-300">R$ 120,00</span></div>
+                            <div class="w-full bg-gray-800 rounded-full h-2 overflow-hidden"><div id="guiaBarraCorr" class="bg-yellow-500 h-2 rounded-full transition-all duration-700" style="width: 30%"></div></div>
                         </div>
-                        <div class="bg-gray-900 p-2 rounded-lg border border-gray-800 text-center">
-                            <strong class="text-pink-400 block">Pneus</strong>
-                            Troca e alinhamento
-                        </div>
-                        <div class="bg-gray-900 p-2 rounded-lg border border-gray-800 text-center">
-                            <strong class="text-purple-400 block">Documentação</strong>
-                            IPVA, Seguro, Taxas
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1"><span class="text-pink-400 font-semibold">Pneus & Documentação</span><span id="guiaBarraPneuTxt" class="font-mono text-gray-300">R$ 180,00</span></div>
+                            <div class="w-full bg-gray-800 rounded-full h-2 overflow-hidden"><div id="guiaBarraPneu" class="bg-pink-500 h-2 rounded-full transition-all duration-700" style="width: 45%"></div></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- PASSO 5: POSTOS E OFICINAS COM GPS -->
+            <!-- ANIMAÇÃO 5: PASSO 5 - RADAR DE LOCALIZAÇÃO GPS -->
             <div id="passo5_gps" class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg space-y-4">
                 <div class="flex items-center gap-3">
                     <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold flex items-center justify-center text-sm border border-emerald-500/30">5</span>
@@ -936,25 +994,27 @@
                 </div>
 
                 <p class="text-xs text-gray-300 leading-relaxed">
-                    Ao cadastrar um novo posto ou oficina na aba <strong>Locais</strong>, basta clicar no botão azul <strong>"Usar GPS para sugerir nome e endereço"</strong>. O DriveStats obtém suas coordenadas em tempo real e busca o nome do estabelecimento comercial mais próximo automaticamente.
+                    Ao cadastrar um novo posto ou oficina na aba <strong>Locais</strong>, basta clicar no botão azul <strong>"Sugerir por GPS (OpenStreetMap)"</strong>. O DriveStats obtém suas coordenadas em tempo real e busca o nome e endereço mais próximos automaticamente.
                 </p>
 
-                <!-- FIGURA / SIMULAÇÃO DE GPS -->
-                <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-3">
-                    <span class="text-[10px] uppercase font-mono text-gray-500 block">Simulação Visual do Recurso de GPS:</span>
-                    
-                    <div class="p-3 bg-gray-900 border border-gray-800 rounded-xl space-y-2">
-                        <div class="w-full bg-blue-600/30 border border-blue-500/40 text-blue-300 p-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-location-crosshairs animate-pulse"></i> Usar GPS para sugerir nome e endereço
+                <div class="bg-gray-950 p-4 rounded-xl border border-gray-800">
+                    <span class="text-[10px] uppercase font-mono text-gray-500 block mb-3">Animação 5 • Pulso de Localização GPS:</span>
+                    <div class="p-3 bg-gray-900 border border-gray-800 rounded-xl flex items-center gap-4">
+                        <div class="relative w-11 h-11 flex items-center justify-center flex-shrink-0">
+                            <span class="guia-anim-radar absolute inset-0 rounded-full bg-blue-500/30"></span>
+                            <div class="relative z-10 w-8 h-8 rounded-full bg-blue-600/30 border border-blue-400/60 text-blue-300 flex items-center justify-center">
+                                <i class="fa-solid fa-location-crosshairs"></i>
+                            </div>
                         </div>
-                        <div class="text-[11px] text-emerald-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-check"></i> Sugestão preenchida: "Posto Shell - Centro • Av. Central, 100"
+                        <div class="text-xs space-y-0.5 min-w-0">
+                            <p class="font-bold text-blue-300 truncate">Coordenadas capturadas via GPS</p>
+                            <p class="text-[11px] text-emerald-400 truncate"><i class="fa-solid fa-check mr-1"></i> Sugestão preenchida: "Posto Exemplo - Centro • Av. Central, 100"</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- PASSO 6: PREVENTIVA INTELIGENTE, INDICADORES E EXPORTAÇÃO -->
+            <!-- ANIMAÇÃO 6: PASSO 6 - BARRA DE DESGASTE PREVENTIVO -->
             <div id="passo6_preventiva" class="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg space-y-4">
                 <div class="flex items-center gap-3">
                     <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-extrabold flex items-center justify-center text-sm border border-emerald-500/30">6</span>
@@ -970,28 +1030,23 @@
                     Na aba <strong>Análises</strong>, você encontra a gestão preventiva por componente (óleo, velas, pastilhas, correias, transmissão) com barra de progresso colorida, comparativo financeiro de R$/km, comparador entre Carro e Moto e exportação completa para planilhas.
                 </p>
 
-                <!-- FIGURA / SIMULAÇÃO DE PREVENTIVA INTELIGENTE -->
                 <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 space-y-3">
-                    <span class="text-[10px] uppercase font-mono text-gray-500 block">Simulação Visual de Componente Preventivo:</span>
+                    <span class="text-[10px] uppercase font-mono text-gray-500 block">Animação 6 • Monitoramento Contínuo de Desgaste Preventivo:</span>
                     
                     <div class="bg-gray-900 border border-gray-800 p-3.5 rounded-xl space-y-2.5">
                         <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded border bg-yellow-500/20 text-yellow-400 border-yellow-500/30">PRÓXIMA DA REVISÃO</span>
-                            <span class="text-emerald-400 font-bold text-xs"><i class="fa-solid fa-check mr-1"></i> Realizada</span>
+                            <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded border bg-yellow-500/20 text-yellow-400 border-yellow-500/30 guia-anim-float">MONITORAMENTO ATIVO</span>
+                            <span class="text-emerald-400 font-bold text-xs"><i class="fa-solid fa-shield-halved mr-1"></i> KM + Tempo</span>
                         </div>
                         <h4 class="font-bold text-white text-xs">Troca de Óleo do Motor e Filtro</h4>
                         <div class="space-y-1">
                             <div class="flex justify-between text-[10px] text-gray-400">
-                                <span>Desgaste / Uso (prevalece critério mais avançado)</span>
-                                <span class="font-bold text-yellow-400">82%</span>
+                                <span>Avanço contínuo até o limite (prevalece critério mais próximo)</span>
+                                <span class="font-bold text-yellow-400">Dinâmico</span>
                             </div>
                             <div class="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
-                                <div class="bg-yellow-500 h-2 rounded-full" style="width: 82%"></div>
+                                <div class="guia-anim-bar bg-gradient-to-r from-emerald-500 via-yellow-400 to-red-500 h-2 rounded-full"></div>
                             </div>
-                        </div>
-                        <div class="flex justify-between text-[11px] text-gray-300 pt-1">
-                            <span>Restam: <strong>450 km</strong></span>
-                            <span>Previsão: <strong>2026-12-15 (24 dias)</strong></span>
                         </div>
                     </div>
 
@@ -1082,7 +1137,6 @@
                 </button>
                 <button id="btnReautorizarArquivo" onclick="reautorizarArquivoSalvo()" class="w-full bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 font-bold px-4 py-2.5 rounded-xl text-xs transition hidden">Reautorizar arquivo já vinculado</button>
                 
-                <!-- BOTÃO SEPARADO E DESTACADO: COMO USAR -->
                 <button onclick="abrirComoUsarDoModal()" class="w-full bg-gradient-to-r from-amber-500/20 via-emerald-500/20 to-blue-500/20 hover:from-amber-500/30 hover:to-emerald-500/30 text-amber-300 border border-amber-500/50 font-extrabold px-4 py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10">
                     <i class="fa-solid fa-circle-question text-amber-400 text-sm"></i> Como Usar o DriveStats? Ver Guia Passo a Passo
                 </button>
@@ -1094,7 +1148,7 @@
         </div>
     </div>
 
-    <!-- MODAL FORMULÁRIO GENÉRICO (VEÍCULO, ABASTECIMENTO, MANUTENÇÃO, AVISO, LOCAL) -->
+    <!-- MODAL FORMULÁRIO GENÉRICO -->
     <div id="modalForm" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
             <h3 id="modalTitulo" class="text-lg font-bold text-white mb-4 flex items-center gap-2"></h3>
@@ -1168,7 +1222,7 @@
         </div>
     </div>
 
-    <!-- MODAL DRILL-DOWN: CONSULTAR DADOS QUE ORIGINARAM OS INDICADORES -->
+    <!-- MODAL DRILL-DOWN -->
     <div id="modalDrillDown" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-3 sm:p-4 hidden">
         <div class="modal-dialog-scroll bg-gray-900 border border-gray-700 rounded-2xl max-w-4xl p-4 sm:p-5 shadow-2xl relative">
             <div class="modal-header-fixed flex justify-between items-center gap-2 pb-3 border-b border-gray-800">
@@ -1232,11 +1286,9 @@
                 { id: 2, nome: "Moto Exemplo (Street 250)", tipo: "moto", placa: "EXA-1A26", modelo: "Street 250cc", odometro: 12000, calibragem: "29 / 33 psi" }
             ],
             abastecimentos: [
-                // Carro Exemplo (Sedan 1.6)
                 { id: 1, veiculoId: 1, data: "2026-01-05", hora: "08:30", odometro: 44200, litros: 42.0, valorTotal: 252.00, posto: "Posto Exemplo - Centro", tanqueCheio: true, combustivel: "gasolina_comum" },
                 { id: 2, veiculoId: 1, data: "2026-01-20", hora: "14:15", odometro: 44600, litros: 38.0, valorTotal: 228.00, posto: "Posto Exemplo - Rodovia", tanqueCheio: true, combustivel: "gasolina_comum" },
                 { id: 3, veiculoId: 1, data: "2026-02-05", hora: "09:00", odometro: 45000, litros: 40.0, valorTotal: 240.00, posto: "Posto Exemplo - Centro", tanqueCheio: true, combustivel: "gasolina_comum" },
-                // Moto Exemplo (Street 250)
                 { id: 4, veiculoId: 2, data: "2026-01-10", hora: "10:00", odometro: 11400, litros: 11.0, valorTotal: 66.00, posto: "Posto Exemplo - Centro", tanqueCheio: true, combustivel: "gasolina_comum" },
                 { id: 5, veiculoId: 2, data: "2026-01-25", hora: "16:30", odometro: 11750, litros: 10.5, valorTotal: 63.00, posto: "Posto Exemplo - Rodovia", tanqueCheio: true, combustivel: "gasolina_comum" },
                 { id: 6, veiculoId: 2, data: "2026-02-10", hora: "11:20", odometro: 12000, litros: 8.0, valorTotal: 48.00, posto: "Posto Exemplo - Centro", tanqueCheio: true, combustivel: "gasolina_comum" }
@@ -1272,7 +1324,6 @@
 
         const PADRAO_DB = PADRAO_GENERICO_DB;
 
-        // Estado do Banco e Aplicação: inicia SEMPRE com dados genéricos de exemplo até vincular o arquivo TXT real
         let db = JSON.parse(JSON.stringify(PADRAO_GENERICO_DB));
         let fileHandle = null;
         let filaGravacao = Promise.resolve();
@@ -1280,14 +1331,14 @@
         let pendingFileHandle = null;
         let tempManutencaoItens = [];
         let editandoPlanoId = null;
+        let guiaAnimPausado = false;
+        let guiaCicloTimer = null;
 
-        // Instâncias do Chart.js
         let chartInstance = null;
         let chartAnaliseConsumoInst = null;
         let chartAnaliseDespesasDonutInst = null;
         let chartAnaliseDespesasBarraInst = null;
 
-        // Estado dos Filtros de Análises
         let filtroAnaliseEstado = {
             veiculoId: 'ativo',
             periodo: 'tudo',
@@ -1302,6 +1353,10 @@
             const mes = String(data.getMonth() + 1).padStart(2, '0');
             const dia = String(data.getDate()).padStart(2, '0');
             return `${ano}-${mes}-${dia}`;
+        }
+
+        function sanitizarNomeArquivo(nome) {
+            return String(nome || 'veiculo').replace(/[^a-zA-Z0-9_-]/g, '_');
         }
 
         function esc(valor) {
@@ -1342,17 +1397,103 @@
             return dados.locais.every(l => l && Number.isSafeInteger(l.id) && typeof l.nome === 'string' && typeof l.tipo === 'string' && (l.endereco == null || typeof l.endereco === 'string') && (l.latitude == null || Number.isFinite(Number(l.latitude))) && (l.longitude == null || Number.isFinite(Number(l.longitude))));
         }
 
-        function csvParseLinha(linha, delimitador = ';') {
-            const campos = []; let campo = ''; let aspas = false;
-            for (let i = 0; i < linha.length; i++) {
-                const c = linha[i];
-                if (c === '"' && aspas && linha[i + 1] === '"') { campo += '"'; i++; }
-                else if (c === '"') aspas = !aspas;
-                else if (c === delimitador && !aspas) { campos.push(campo); campo = ''; }
-                else campo += c;
+        // ==========================================
+        // INTERATIVIDADE & ANIMAÇÕES DA ABA GUIA
+        // ==========================================
+        function alternarAnimacoesGuia() {
+            guiaAnimPausado = !guiaAnimPausado;
+            const guiaEl = document.getElementById('abaComoUsar');
+            const btn = document.getElementById('btnToggleAnimGuia');
+            if (guiaEl) guiaEl.classList.toggle('guia-pausado', guiaAnimPausado);
+            if (btn) {
+                btn.innerHTML = guiaAnimPausado
+                    ? '<i class="fa-solid fa-play"></i> <span>Retomar Animações</span>'
+                    : '<i class="fa-solid fa-pause"></i> <span>Pausar Animações</span>';
             }
-            campos.push(campo);
-            return campos;
+            if (guiaAnimPausado && guiaCicloTimer) {
+                clearInterval(guiaCicloTimer);
+                guiaCicloTimer = null;
+            } else if (!guiaAnimPausado) {
+                iniciarLoopCicloGuia();
+            }
+        }
+
+        function alternarPreviewGuiaVeiculo(tipo) {
+            const btnCarro = document.getElementById('btnGuiaPreviewCarro');
+            const btnMoto = document.getElementById('btnGuiaPreviewMoto');
+            const badge = document.getElementById('guiaVeicBadge');
+            const nome = document.getElementById('guiaVeicNome');
+            const meta = document.getElementById('guiaVeicMeta');
+            const psi = document.getElementById('guiaVeicPsi');
+            if (!badge || !nome || !meta || !psi) return;
+
+            if (tipo === 'moto') {
+                btnMoto.className = 'px-2.5 py-1 rounded-lg font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition';
+                btnCarro.className = 'px-2.5 py-1 rounded-lg font-bold bg-gray-800 text-gray-400 border border-gray-700 transition';
+                badge.innerHTML = '<i class="fa-solid fa-motorcycle"></i> moto';
+                nome.textContent = 'Moto Exemplo (Street 250)';
+                meta.innerHTML = 'Street 250cc • Placa: <span class="text-gray-200 font-mono">EXA-1A26</span> • Odômetro: <span class="text-emerald-400 font-bold">12.000 km</span>';
+                psi.innerHTML = '<i class="fa-solid fa-gauge"></i> 29 / 33 psi';
+            } else {
+                btnCarro.className = 'px-2.5 py-1 rounded-lg font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition';
+                btnMoto.className = 'px-2.5 py-1 rounded-lg font-bold bg-gray-800 text-gray-400 border border-gray-700 transition';
+                badge.innerHTML = '<i class="fa-solid fa-car"></i> carro';
+                nome.textContent = 'Carro Exemplo (Sedan 1.6)';
+                meta.innerHTML = 'Sedan 1.6 Flex • Placa: <span class="text-gray-200 font-mono">BRA-2E19</span> • Odômetro: <span class="text-emerald-400 font-bold">45.000 km</span>';
+                psi.innerHTML = '<i class="fa-solid fa-gauge"></i> 32 psi';
+            }
+        }
+
+        function destacarPassoCicloGuia(ativoIdx) {
+            document.querySelectorAll('.guia-ciclo-card').forEach((card, idx) => {
+                if (idx <= ativoIdx) {
+                    card.classList.remove('opacity-75', 'border-gray-800');
+                    card.classList.add('opacity-100', 'border-emerald-500/60', 'shadow-md');
+                } else {
+                    card.classList.remove('opacity-100', 'border-emerald-500/60', 'shadow-md');
+                    card.classList.add('opacity-75', 'border-gray-800');
+                }
+            });
+        }
+
+        function dispararCicloGuiaAbast() {
+            destacarPassoCicloGuia(0);
+            setTimeout(() => destacarPassoCicloGuia(1), 500);
+            setTimeout(() => destacarPassoCicloGuia(2), 1000);
+        }
+
+        function iniciarLoopCicloGuia() {
+            if (guiaCicloTimer) clearInterval(guiaCicloTimer);
+            let passo = 0;
+            destacarPassoCicloGuia(passo);
+            guiaCicloTimer = setInterval(() => {
+                if (guiaAnimPausado) return;
+                passo = (passo + 1) % 3;
+                destacarPassoCicloGuia(passo);
+            }, 1800);
+        }
+
+        function animarBarrasGuiaOficina() {
+            const p = document.getElementById('guiaBarraPrev');
+            const c = document.getElementById('guiaBarraCorr');
+            const pn = document.getElementById('guiaBarraPneu');
+            const pt = document.getElementById('guiaBarraPrevTxt');
+            const ct = document.getElementById('guiaBarraCorrTxt');
+            const pnt = document.getElementById('guiaBarraPneuTxt');
+            if (!p || !c || !pn) return;
+
+            const cenarios = [
+                { pw: '65%', cw: '30%', pnw: '45%', pt: 'R$ 350,00', ct: 'R$ 120,00', pnt: 'R$ 180,00' },
+                { pw: '45%', cw: '72%', pnw: '35%', pt: 'R$ 280,00', ct: 'R$ 490,00', pnt: 'R$ 140,00' },
+                { pw: '80%', cw: '20%', pnw: '68%', pt: 'R$ 420,00', ct: 'R$ 95,00', pnt: 'R$ 360,00' }
+            ];
+            const atual = cenarios[Math.floor(Math.random() * cenarios.length)];
+            p.style.width = atual.pw;
+            c.style.width = atual.cw;
+            pn.style.width = atual.pnw;
+            if (pt) pt.textContent = atual.pt;
+            if (ct) ct.textContent = atual.ct;
+            if (pnt) pnt.textContent = atual.pnt;
         }
 
         // ==========================================
@@ -1412,7 +1553,6 @@
                 }
             }
 
-            // Sem arquivo TXT autorizado: manter dados genéricos de exemplo (1 carro e 1 moto)
             fileHandle = null;
             db = JSON.parse(JSON.stringify(PADRAO_GENERICO_DB));
             atualizarStatusTxtUI();
@@ -1461,6 +1601,8 @@
                     fileHandle = handle;
                     const file = await fileHandle.getFile();
                     const text = await file.text();
+                    let arquivoEstavaVazio = false;
+
                     if (text.trim()) {
                         let dadosImportados;
                         try { dadosImportados = JSON.parse(text); }
@@ -1469,12 +1611,19 @@
                         if (!confirm('O arquivo contém dados. Deseja substituir os dados locais pelo conteúdo deste arquivo?')) { fileHandle = null; return; }
                         db = normalizarBanco(dadosImportados);
                         try { localStorage.setItem('drivestats_db', JSON.stringify(db)); } catch (e) {}
+                    } else {
+                        arquivoEstavaVazio = true;
                     }
+
                     if (window.idbKeyval) await window.idbKeyval.set('drivestats_file_handle', fileHandle);
                     atualizarStatusTxtUI(file.name);
                     document.getElementById('modalBackupObrigatorio').classList.add('hidden');
                     inicializarApp();
-                    alert(`Arquivo "${file.name}" sincronizado em tempo real com sucesso!`);
+                    if (arquivoEstavaVazio) {
+                        alert(`Arquivo "${file.name}" vinculado (atualmente em branco). Ele será preenchido automaticamente na próxima gravação.`);
+                    } else {
+                        alert(`Arquivo "${file.name}" sincronizado em tempo real com sucesso!`);
+                    }
                 } catch (err) {
                     if (err.name !== 'AbortError' && !veioDoModal) alert("Não foi possível acessar o arquivo.");
                     else if (!fileHandle) inicializarApp();
@@ -1553,8 +1702,6 @@
         // MOTOR DE ANÁLISES & INDICADORES (ANALYTICS)
         // ==========================================
         const DriveStatsAnalytics = {
-            
-            // Retorna o intervalo { inicio, fim } para o período
             obterDatasPeriodo(tipoPeriodo, customInicio = '', customFim = '') {
                 const fim = new Date();
                 fim.setHours(23, 59, 59, 999);
@@ -1583,7 +1730,6 @@
                 return { inicio, fim };
             },
 
-            // Período comparativo anterior de mesma duração
             obterPeriodoAnterior(inicio, fim) {
                 if (!inicio) return null;
                 const duracaoMs = fim.getTime() - inicio.getTime();
@@ -1592,7 +1738,6 @@
                 return { inicio: inicioAnterior, fim: fimAnterior };
             },
 
-            // Filtro de data genérico
             filtrarPorIntervalo(registros, inicio, fim, campoData = 'data') {
                 if (!inicio) return [...registros];
                 return registros.filter(r => {
@@ -1602,11 +1747,10 @@
                 });
             },
 
-            // Metodologia rigorosa de consumo com abastecimentos parciais
             calcularCiclosPorVeiculo(veiculoId, todosAbastecimentos) {
                 const abasts = todosAbastecimentos
                     .filter(a => a.veiculoId === veiculoId)
-                    .sort((a, b) => (Number(a.odometro) || 0) - (Number(b.odometro) || 0) || new Date(a.data) - new Date(b.data) || a.id - b.id);
+                    .sort((a, b) => (Number(a.odometro) || 0) - (Number(b.odometro) || 0) || new Date(a.data + 'T00:00:00') - new Date(b.data + 'T00:00:00') || a.id - b.id);
 
                 const ciclos = [];
                 let ultimoCheio = null;
@@ -1614,7 +1758,7 @@
 
                 for (let i = 0; i < abasts.length; i++) {
                     const a = abasts[i];
-                    const isCheio = a.tanqueCheio !== false; // Legado e padrão = true; parciais explícitos = false
+                    const isCheio = a.tanqueCheio !== false;
 
                     if (isCheio) {
                         if (ultimoCheio !== null) {
@@ -1654,7 +1798,6 @@
                 return { ciclos, parciaisPendentes: parciaisAcumulados };
             },
 
-            // Média móvel dos ciclos (janela de 3)
             calcularMediaMovel(ciclos, janela = 3) {
                 return ciclos.map((c, i, arr) => {
                     const sub = arr.slice(Math.max(0, i - janela + 1), i + 1);
@@ -1663,7 +1806,6 @@
                 });
             },
 
-            // Detector de Anomalia de Consumo (>10% de queda)
             detectarAnomalia(ciclos, limitePct = 10) {
                 if (ciclos.length < 3) return null;
                 const ultimoCiclo = ciclos[ciclos.length - 1];
@@ -1696,7 +1838,6 @@
                 return null;
             },
 
-            // Status e Progresso de Manutenção Preventiva
             calcularStatusPreventiva(plano, veiculoOdometro, dataReferencia = new Date(), margemKm = 500, margemDias = 15) {
                 const kmUltima = Number(plano.kmUltima) || 0;
                 const intervaloKm = Number(plano.intervaloKm) || 10000;
@@ -1746,7 +1887,10 @@
         // ==========================================
         // RENDERIZAÇÃO DO APLICATIVO
         // ==========================================
-        document.addEventListener('DOMContentLoaded', () => tentarRestaurarHandle());
+        document.addEventListener('DOMContentLoaded', () => {
+            tentarRestaurarHandle();
+            iniciarLoopCicloGuia();
+        });
 
         function inicializarApp() {
             if (!db.veiculoAtivoId || !db.veiculos.some(v => v.id === db.veiculoAtivoId)) {
@@ -1777,10 +1921,16 @@
             const btnAtivo = document.getElementById('btnAba' + abaNome);
             if (btnAtivo) btnAtivo.className = "bottom-nav-btn nav-ativo text-emerald-400 transition";
 
-            if (abaNome === 'VisaoGeral') { renderizarApp(); }
+            if (abaNome === 'VisaoGeral') {
+                renderizarApp();
+                renderizarGrafico();
+            }
             if (abaNome === 'Analises') renderizarAbaAnalises();
             if (abaNome === 'Ajustes') renderizarAbaAjustes();
-            if (abaNome === 'ComoUsar') { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+            if (abaNome === 'ComoUsar') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                if (!guiaAnimPausado) iniciarLoopCicloGuia();
+            }
         }
 
         function abrirComoUsarDoModal() {
@@ -1849,27 +1999,22 @@
             const manuts = db.manutencoes.filter(m => m.veiculoId === veiculo.id);
             const avisos = db.avisos.filter(av => av.veiculoId === veiculo.id && av.status === 'ativo');
 
-            // Gastos Totais
             let gastoTotal = abasts.reduce((acc, it) => acc + (Number(it.valorTotal) || 0), 0);
             manuts.forEach(m => (m.itens || []).forEach(i => gastoTotal += (Number(i.valor) || 0)));
 
-            // Gastos no Mês Atual
             const mesAtualStr = dataLocalISO().slice(0, 7);
             let gastoMesAtual = abasts.filter(a => (a.data || '').startsWith(mesAtualStr)).reduce((s, a) => s + (Number(a.valorTotal) || 0), 0);
             manuts.filter(m => (m.data || '').startsWith(mesAtualStr)).forEach(m => (m.itens || []).forEach(i => gastoMesAtual += (Number(i.valor) || 0)));
 
-            // Ciclos de Consumo
             const resCiclos = DriveStatsAnalytics.calcularCiclosPorVeiculo(veiculo.id, db.abastecimentos);
             const ciclos = resCiclos.ciclos;
             const kmCheios = ciclos.reduce((s, c) => s + c.kmPercorrido, 0);
             const litrosCheios = ciclos.reduce((s, c) => s + c.litrosConsumidos, 0);
             const mediaConsumo = litrosCheios > 0 ? (kmCheios / litrosCheios) : 0;
 
-            // Custos por KM
             const custoCombKm = kmCheios > 0 ? (ciclos.reduce((s, c) => s + c.valorConsumido, 0) / kmCheios) : 0;
             const custoTotalKm = kmCheios > 0 ? (gastoTotal / kmCheios) : 0;
 
-            // Preventivas
             const planos = (db.planosPreventivos || []).filter(p => p.veiculoId === veiculo.id);
             let qtdPrevVencidas = 0;
             planos.forEach(p => {
@@ -1877,7 +2022,6 @@
                 if (st.status === 'vencida') qtdPrevVencidas++;
             });
 
-            // Atualiza Cards do Dashboard
             document.getElementById('statOdometro').textContent = `${veiculo.odometro.toLocaleString()} km`;
             document.getElementById('statGastoTotal').textContent = 'R$ ' + gastoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
             document.getElementById('statGastoMesAtual').textContent = 'Mês: R$ ' + gastoMesAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
@@ -1888,7 +2032,6 @@
             document.getElementById('statCustoComb100Km').textContent = `R$ ${(custoCombKm * 100).toFixed(2)} / 100 km`;
             document.getElementById('statCustoTotalKm').textContent = `R$ ${custoTotalKm.toFixed(2)} / km`;
 
-            // Verificação de Anomalias no Consumo
             const anomalia = DriveStatsAnalytics.detectarAnomalia(ciclos, db.configuracoes?.limiteAnomaliaConsumoPct || 10);
             const boxAnomalia = document.getElementById('secaoAnomaliaConsumo');
             if (boxAnomalia) {
@@ -1914,7 +2057,9 @@
             renderizarAlertasDestaque(avisos, planos, veiculo.odometro);
             renderizarPrevisaoAbastecimento(abasts, veiculo.odometro);
             renderizarListas(abasts, manuts, avisos);
-            renderizarGrafico();
+            if (!document.getElementById('abaVisaoGeral')?.classList.contains('hidden')) {
+                renderizarGrafico();
+            }
             renderizarAbaAjustes();
         }
 
@@ -1972,7 +2117,6 @@
             const { inicio, fim } = DriveStatsAnalytics.obterDatasPeriodo(filtroAnaliseEstado.periodo, filtroAnaliseEstado.dataInicio, filtroAnaliseEstado.dataFim);
             const periodoAnterior = filtroAnaliseEstado.compararPeriodoAnterior ? DriveStatsAnalytics.obterPeriodoAnterior(inicio, fim) : null;
 
-            // Coleta de dados filtrados
             let abastsFiltrados = DriveStatsAnalytics.filtrarPorIntervalo(
                 veiculoTargetId ? db.abastecimentos.filter(a => a.veiculoId === veiculoTargetId) : db.abastecimentos,
                 inicio, fim
@@ -1982,7 +2126,6 @@
                 inicio, fim
             );
 
-            // Coleta de dados do período anterior (para comparação)
             let abastsAnteriores = periodoAnterior ? DriveStatsAnalytics.filtrarPorIntervalo(
                 veiculoTargetId ? db.abastecimentos.filter(a => a.veiculoId === veiculoTargetId) : db.abastecimentos,
                 periodoAnterior.inicio, periodoAnterior.fim
@@ -1992,7 +2135,6 @@
                 periodoAnterior.inicio, periodoAnterior.fim
             ) : [];
 
-            // Ciclos de consumo
             const veiculosAnalisar = veiculoTargetId ? db.veiculos.filter(v => v.id === veiculoTargetId) : db.veiculos;
             let ciclosPeriodo = [];
             let ciclosAnteriores = [];
@@ -2008,22 +2150,11 @@
                 });
             });
 
-            // 1. Renderiza Sub-aba Consumo
             renderizarSubabaConsumo(ciclosPeriodo, ciclosAnteriores, abastsFiltrados, totalParciaisPendentes);
-
-            // 2. Renderiza Sub-aba Financeiro
             renderizarSubabaFinanceiro(abastsFiltrados, manutsFiltradas, ciclosPeriodo, abastsAnteriores, manutsAnteriores, ciclosAnteriores);
-
-            // 3. Renderiza Sub-aba Preventiva
             renderizarSubabaPreventiva(veiculoTargetId);
-
-            // 4. Renderiza Sub-aba Inteligência
             renderizarSubabaInteligencia(veiculoTargetId);
-
-            // 5. Renderiza Comparativo Carro x Moto
             renderizarSubabaComparativo();
-
-            // 6. Renderiza Auditoria
             renderizarSubabaAuditoria();
         }
 
@@ -2063,7 +2194,6 @@
             });
             if (piorConsumo === 999) piorConsumo = 0;
 
-            // Preços por Litro
             const precosLitro = abasts.filter(a => a.litros > 0 && a.valorTotal > 0).map(a => ({
                 preco: a.valorTotal / a.litros,
                 posto: a.posto || 'Posto não especificado',
@@ -2084,7 +2214,6 @@
             document.getElementById('anStatMaiorPrecoLitro').textContent = maiorPrecoObj ? `R$ ${maiorPrecoObj.preco.toFixed(3)}` : '-';
             document.getElementById('anStatMaiorPrecoPosto').textContent = maiorPrecoObj ? maiorPrecoObj.posto : '-';
 
-            // Comparações de Período
             const elCompConsumo = document.getElementById('anStatConsumoMedioComp');
             if (elCompConsumo) {
                 if (filtroAnaliseEstado.compararPeriodoAnterior && consumoMedioAnt > 0) {
@@ -2094,7 +2223,6 @@
                 } else elCompConsumo.innerHTML = '';
             }
 
-            // Gráfico de Consumo por Ciclo + Média Móvel
             const ctx = document.getElementById('chartAnaliseConsumo');
             if (ctx) {
                 if (chartAnaliseConsumoInst) chartAnaliseConsumoInst.destroy();
@@ -2134,7 +2262,6 @@
                 });
             }
 
-            // Ranking de Postos por Preço Médio
             const containerPostos = document.getElementById('tabelaRankingPostos');
             if (containerPostos) {
                 const postosMap = {};
@@ -2162,7 +2289,6 @@
                 }
             }
 
-            // Comparador Gasolina vs Etanol
             const cardFlex = document.getElementById('cardComparadorFlex');
             if (cardFlex) {
                 const abastsGas = abasts.filter(a => (a.combustivel || 'gasolina_comum').includes('gasolina'));
@@ -2213,17 +2339,14 @@
             const kmRodados = ciclos.reduce((s, c) => s + c.kmPercorrido, 0);
             const custoTotalKm = kmRodados > 0 ? (totalDespesas / kmRodados) : 0;
 
-            // Período anterior
             let totalDespAnt = abastsAnt.reduce((s, a) => s + (Number(a.valorTotal) || 0), 0);
             manutsAnt.forEach(m => (m.itens || []).forEach(i => totalDespAnt += (Number(i.valor) || 0)));
             const kmRodadosAnt = ciclosAnt.reduce((s, c) => s + c.kmPercorrido, 0);
             const custoTotalKmAnt = kmRodadosAnt > 0 ? (totalDespAnt / kmRodadosAnt) : 0;
 
-            // Média mensal
             const mesesAtivos = Math.max(1, new Set([...abasts, ...manuts].map(r => (r.data || '').slice(0, 7))).size);
             const mediaMensal = totalDespesas / mesesAtivos;
 
-            // Maior despesa
             let maiorValor = 0, maiorDesc = '-';
             abasts.forEach(a => { if (a.valorTotal > maiorValor) { maiorValor = a.valorTotal; maiorDesc = `Abast. ${a.litros}L (${a.data})`; } });
             manuts.forEach(m => {
@@ -2245,7 +2368,6 @@
                 } else elCompCusto.innerHTML = '';
             }
 
-            // Gráfico Donut de Despesas por Categoria
             const ctxDonut = document.getElementById('chartAnaliseDespesasDonut');
             if (ctxDonut) {
                 if (chartAnaliseDespesasDonutInst) chartAnaliseDespesasDonutInst.destroy();
@@ -2267,7 +2389,6 @@
                 });
             }
 
-            // Gráfico de Barras Mensais
             const ctxBar = document.getElementById('chartAnaliseDespesasBarra');
             if (ctxBar) {
                 if (chartAnaliseDespesasBarraInst) chartAnaliseDespesasBarraInst.destroy();
@@ -2305,7 +2426,6 @@
                 });
             }
 
-            // Tabela Demonstrativa de Custos
             const containerTabela = document.getElementById('tabelaDemonstrativoCustos');
             if (containerTabela) {
                 const linhas = [
@@ -2415,7 +2535,6 @@
                             </div>
                         </div>
 
-                        <!-- BARRA DE PROGRESSO -->
                         <div class="space-y-1">
                             <div class="flex justify-between text-[11px]">
                                 <span class="text-gray-400">Uso do componente (${st.criterioVencendo})</span>
@@ -2426,7 +2545,6 @@
                             </div>
                         </div>
 
-                        <!-- DETALHES DE KM E DIAS RESTANTES -->
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center text-xs">
                             <div class="bg-gray-800/60 p-2 rounded-lg border border-gray-700/50">
                                 <span class="text-gray-400 block text-[10px]">Restam em KM</span>
@@ -2467,7 +2585,6 @@
                 });
             });
 
-            // Identificação de intervalos curtos (< 3000 km)
             const alertas = [];
             Object.values(servicos).forEach(s => {
                 if (s.ocorrencias.length >= 2) {
@@ -2477,12 +2594,7 @@
                         const at = s.ocorrencias[i];
                         const diffKm = at.odometro - ant.odometro;
                         if (diffKm > 0 && diffKm < 3000) {
-                            alertas.push({
-                                item: s.nomeOriginal,
-                                diffKm,
-                                ant,
-                                at
-                            });
+                            alertas.push({ item: s.nomeOriginal, diffKm, ant, at });
                         }
                     }
                 }
@@ -2511,7 +2623,6 @@
                 }
             }
 
-            // Top Gastos
             if (listaTop) {
                 const ranking = Object.values(servicos).sort((a, b) => b.valorTotal - a.valorTotal).slice(0, 5);
                 if (!ranking.length) {
@@ -2571,7 +2682,6 @@
 
             container.innerHTML = `
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- CARD CARROS -->
                     <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow space-y-3">
                         <div class="flex items-center gap-2 border-b border-gray-800 pb-2">
                             <span class="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 text-lg"><i class="fa-solid fa-car"></i></span>
@@ -2589,7 +2699,6 @@
                         </div>
                     </div>
 
-                    <!-- CARD MOTOS -->
                     <div class="bg-gray-900 border border-gray-800 p-4 rounded-2xl shadow space-y-3">
                         <div class="flex items-center gap-2 border-b border-gray-800 pb-2">
                             <span class="p-2 rounded-lg bg-blue-500/20 text-blue-400 text-lg"><i class="fa-solid fa-motorcycle"></i></span>
@@ -2616,11 +2725,10 @@
 
             const inconsistencias = [];
 
-            // 1. Verificação de Odômetros Regressivos
             db.veiculos.forEach(v => {
                 const regs = [
-                    ...db.abastecimentos.filter(a => a.veiculoId === v.id).map(a => ({ tipo: 'Abastecimento', data: a.data, odometro: a.odometro, id: a.id })),
-                    ...db.manutencoes.filter(m => m.veiculoId === v.id).map(m => ({ tipo: 'Manutenção', data: m.data, odometro: m.odometro, id: m.id }))
+                    ...db.abastecimentos.filter(a => a.veiculoId === v.id).map(a => ({ tipo: 'Abastecimento', data: a.data, hora: a.hora, odometro: a.odometro, id: a.id })),
+                    ...db.manutencoes.filter(m => m.veiculoId === v.id).map(m => ({ tipo: 'Manutenção', data: m.data, hora: m.hora, odometro: m.odometro, id: m.id }))
                 ].sort((a, b) => {
                     const tA = new Date(`${a.data || '1970-01-01'}T${(a.hora || '00:00').slice(0,5)}:00`).getTime();
                     const tB = new Date(`${b.data || '1970-01-01'}T${(b.hora || '00:00').slice(0,5)}:00`).getTime();
@@ -2638,7 +2746,6 @@
                 }
             });
 
-            // 2. Registros com Valores Zerados
             db.abastecimentos.forEach(a => {
                 if (a.litros <= 0 || a.valorTotal <= 0) {
                     inconsistencias.push({
@@ -2764,11 +2871,9 @@
             if (!veiculo) return;
 
             if (confirm(`Registrar que a manutenção de "${plano.nome}" foi realizada hoje no odômetro atual (${veiculo.odometro.toLocaleString()} km)?`)) {
-                // Atualiza o plano
                 plano.kmUltima = veiculo.odometro;
                 plano.dataUltima = dataLocalISO();
 
-                // Cria o registro na oficina correspondente
                 db.manutencoes.unshift({
                     id: Date.now(),
                     veiculoId: veiculo.id,
@@ -2848,12 +2953,12 @@
             let abasts = DriveStatsAnalytics.filtrarPorIntervalo(
                 veiculoTargetId ? db.abastecimentos.filter(a => a.veiculoId === veiculoTargetId) : db.abastecimentos,
                 inicio, fim
-            ).sort((a, b) => new Date(b.data) - new Date(a.data));
+            ).sort((a, b) => new Date(b.data + 'T00:00:00') - new Date(a.data + 'T00:00:00'));
 
             let manuts = DriveStatsAnalytics.filtrarPorIntervalo(
                 veiculoTargetId ? db.manutencoes.filter(m => m.veiculoId === veiculoTargetId) : db.manutencoes,
                 inicio, fim
-            ).sort((a, b) => new Date(b.data) - new Date(a.data));
+            ).sort((a, b) => new Date(b.data + 'T00:00:00') - new Date(a.data + 'T00:00:00'));
 
             const subtitulo = document.getElementById('drillDownSubtitulo');
             subtitulo.textContent = `Exibindo ${abasts.length} abastecimento(s) e ${manuts.length} manutenção(ões) que originaram os cálculos.`;
@@ -2926,7 +3031,6 @@
             }
 
             try {
-                // 1. Abastecimentos completos
                 const abasts1 = [
                     { id: 1, veiculoId: 999, odometro: 10000, litros: 40, valorTotal: 200, tanqueCheio: true, data: "2026-01-01" },
                     { id: 2, veiculoId: 999, odometro: 10500, litros: 50, valorTotal: 250, tanqueCheio: true, data: "2026-01-15" }
@@ -2934,7 +3038,6 @@
                 const c1 = DriveStatsAnalytics.calcularCiclosPorVeiculo(999, abasts1).ciclos;
                 asserir(1, "Consumo em Abastecimentos Completos", c1.length === 1 && Math.abs(c1[0].kmPorLitro - 10.0) < 0.01, `Dist: 500 km, Litros: 50L -> ${c1[0]?.kmPorLitro?.toFixed(2)} km/L`);
 
-                // 2. Abastecimentos parciais acumulados
                 const abasts2 = [
                     { id: 1, veiculoId: 999, odometro: 10000, litros: 40, valorTotal: 200, tanqueCheio: true, data: "2026-01-01" },
                     { id: 2, veiculoId: 999, odometro: 10200, litros: 10, valorTotal: 50, tanqueCheio: false, data: "2026-01-05" },
@@ -2945,30 +3048,24 @@
                 const passou2 = c2.length === 1 && Math.abs(c2[0].kmPorLitro - 10.0) < 0.01 && c2[0].litrosConsumidos === 50;
                 asserir(2, "Cálculo com Abastecimentos Parciais", passou2, `Acumulado: 500 km / (10L + 15L + 25L = 50L) -> ${c2[0]?.kmPorLitro?.toFixed(2)} km/L`);
 
-                // 3. Custo de combustível por km
                 const custoKm = c1[0].valorConsumido / c1[0].kmPercorrido;
                 asserir(3, "Custo de Combustível por Quilômetro", Math.abs(custoKm - 0.50) < 0.01, `R$ 250 / 500 km = R$ ${custoKm.toFixed(2)}/km`);
 
-                // 4. Custo total operacional por km
-                const totalDesp = 250 + 100; // comb + manut
+                const totalDesp = 250 + 100;
                 const tcoKm = totalDesp / 500;
                 asserir(4, "Custo Total Operacional por Quilômetro (TCO)", Math.abs(tcoKm - 0.70) < 0.01, `(R$ 250 comb + R$ 100 manut) / 500 km = R$ ${tcoKm.toFixed(2)}/km`);
 
-                // 5. Comparação entre períodos
                 const diffPct = ((12.0 - 10.0) / 10.0) * 100;
                 asserir(5, "Comparação entre Períodos (Variação %)", Math.abs(diffPct - 20.0) < 0.01, `10 km/L para 12 km/L -> +${diffPct.toFixed(1)}%`);
 
-                // 6. Manutenção por quilometragem
                 const planoKm = { kmUltima: 80000, intervaloKm: 10000, intervaloMeses: 12, dataUltima: "2026-01-01" };
                 const stKm = DriveStatsAnalytics.calcularStatusPreventiva(planoKm, 88000, new Date("2026-03-01"));
                 asserir(6, "Cálculo de Manutenção por Quilometragem", stKm.kmRestantes === 2000 && stKm.proximaKm === 90000, `Restam: ${stKm.kmRestantes} km (Próx: ${stKm.proximaKm} km)`);
 
-                // 7. Manutenção por tempo (meses)
                 const planoTempo = { kmUltima: 10000, intervaloKm: 50000, intervaloMeses: 6, dataUltima: "2026-01-01" };
                 const stTempo = DriveStatsAnalytics.calcularStatusPreventiva(planoTempo, 11000, new Date("2026-07-01"));
                 asserir(7, "Cálculo de Manutenção por Tempo", stTempo.status === 'vencida' || stTempo.status === 'necessaria', `Dias decorridos atingiram vencimento sem atingir km`);
 
-                // 8. Alertas preventivos nos 4 estados
                 const planoEstados = { kmUltima: 10000, intervaloKm: 5000, intervaloMeses: 12, dataUltima: "2026-01-01" };
                 const e1 = DriveStatsAnalytics.calcularStatusPreventiva(planoEstados, 11000, new Date("2026-02-01"), 500, 15).status;
                 const e2 = DriveStatsAnalytics.calcularStatusPreventiva(planoEstados, 14600, new Date("2026-02-01"), 500, 15).status;
@@ -2977,34 +3074,28 @@
                 const passouEstados = e1 === 'em_dia' && e2 === 'proxima' && e3 === 'necessaria' && e4 === 'vencida';
                 asserir(8, "Matriz de 4 Estados Preventivos", passouEstados, `Transições: ${e1} -> ${e2} -> ${e3} -> ${e4}`);
 
-                // 9. Identificação de anomalia de consumo (>10%)
                 const ciclosAnomalia = [
                     { kmPorLitro: 15.0, data: "2026-01-01" },
                     { kmPorLitro: 14.8, data: "2026-01-10" },
                     { kmPorLitro: 15.2, data: "2026-01-20" },
-                    { kmPorLitro: 12.0, data: "2026-01-30" } // queda de 20%
+                    { kmPorLitro: 12.0, data: "2026-01-30" }
                 ];
                 const anom = DriveStatsAnalytics.detectarAnomalia(ciclosAnomalia, 10);
                 asserir(9, "Detecção de Anomalia de Consumo", anom && anom.tipo === 'queda' && anom.variacaoPct > 15, `Queda detectada: -${anom?.variacaoPct?.toFixed(1)}%`);
 
-                // 10. Registros com odômetro inconsistente
                 const odometros = [{ odo: 10000, data: "2026-01-01" }, { odo: 9500, data: "2026-01-05" }];
                 const ehInconsistente = odometros[1].odo < odometros[0].odo;
                 asserir(10, "Detecção de Odômetro Inconsistente / Regressivo", ehInconsistente, `Detectado: 9.500 km registrado após 10.000 km`);
 
-                // 11. Importação e preservação de dados legados
                 const legado = { veiculos: [{ id: 1, nome: "Fusca", odometro: 50000 }], abastecimentos: [], manutencoes: [], avisos: [], locais: [] };
                 const normalizado = normalizarBanco(legado);
                 asserir(11, "Preservação e Migração Compatível de Registros", Array.isArray(normalizado.planosPreventivos) && normalizado.veiculos[0].nome === "Fusca", `Coleções novas inicializadas sem alterar os dados originais`);
 
-                // 12. Sincronização e integridade do arquivo
                 asserir(12, "Validação de Integridade do Banco (validarBanco)", validarBanco(db), `Banco real atual aprovado 100% no validador formal de schemas`);
 
-                // 13. Separação de dados entre veículos da frota
                 const veics = db.veiculos.length;
                 asserir(13, "Isolamento de Métricas entre Veículos", veics >= 2, `${veics} veículos isolados no banco de dados sem contaminação`);
 
-                // 14. Compatibilidade com automóveis e motocicletas
                 const temCarro = db.veiculos.some(v => v.tipo === 'carro');
                 const temMoto = db.veiculos.some(v => v.tipo === 'moto');
                 asserir(14, "Compatibilidade com Carros e Motocicletas", temCarro && temMoto, `Banco possui ambos os tipos com suporte a presets específicos`);
@@ -3088,17 +3179,20 @@
                 card.innerHTML = `<p class="text-gray-400">Registre pelo menos 2 abastecimentos para habilitar a previsão inteligente.</p>`;
                 return;
             }
-            let sorted = [...abasts].sort((a,b) => new Date(a.data) - new Date(b.data));
+            let sorted = [...abasts].sort((a,b) => new Date(a.data + 'T00:00:00') - new Date(b.data + 'T00:00:00'));
             const corte = new Date(); corte.setDate(corte.getDate() - 90);
             const recentes = sorted.filter(a => new Date(a.data + 'T00:00:00') >= corte);
             if (recentes.length >= 2) sorted = recentes;
             let primeiro = sorted[0];
             let ultimo = sorted[sorted.length - 1];
 
-            let diffDias = (new Date(ultimo.data) - new Date(primeiro.data)) / (1000 * 60 * 60 * 24);
+            let diffDias = (new Date(ultimo.data + 'T00:00:00') - new Date(primeiro.data + 'T00:00:00')) / (1000 * 60 * 60 * 24);
             if (diffDias <= 0) diffDias = 1;
             let kmTotais = ultimo.odometro - primeiro.odometro;
-            if (kmTotais <= 0) kmTotais = 1000;
+            if (kmTotais <= 0) {
+                card.innerHTML = `<p class="text-gray-400">Aguardando avanço de quilometragem entre abastecimentos para estimar o próximo tanque.</p>`;
+                return;
+            }
             let mediaKmDia = kmTotais / diffDias;
 
             let somaKm = 0;
@@ -3135,7 +3229,7 @@
                 const ciclosMap = {};
                 res.ciclos.forEach(c => ciclosMap[c.id] = c);
 
-                [...abasts].sort((a,b) => b.odometro - a.odometro).forEach(a => {
+                [...abasts].sort((a,b) => (b.odometro - a.odometro) || new Date(b.data + 'T00:00:00') - new Date(a.data + 'T00:00:00')).forEach(a => {
                     const c = ciclosMap[a.id];
                     divAbast.innerHTML += `
                         <div class="bg-gray-900 border border-gray-800 p-3 rounded-xl flex justify-between items-center text-xs">
@@ -3158,7 +3252,7 @@
             const divManut = document.getElementById('listaManutencoes');
             if (divManut) {
                 divManut.innerHTML = manuts.length ? '' : '<p class="text-xs text-gray-500 text-center py-4">Nenhuma manutenção.</p>';
-                [...manuts].sort((a,b) => b.odometro - a.odometro).forEach(m => {
+                [...manuts].sort((a,b) => (b.odometro - a.odometro) || new Date(b.data + 'T00:00:00') - new Date(a.data + 'T00:00:00')).forEach(m => {
                     const totalM = (m.itens || []).reduce((acc, i) => acc + (Number(i.valor) || 0), 0);
                     const itensStr = (m.itens || []).map(i => `${i.nome} (R$ ${Number(i.valor).toFixed(2)})`).join(', ');
                     divManut.innerHTML += `
@@ -3295,7 +3389,12 @@
                 const v = db.veiculos.find(item => item.id === db.veiculoAtivoId);
                 if (v && ['abastecimentos', 'manutencoes'].includes(colecao)) {
                     const regs = [...db.abastecimentos, ...db.manutencoes].filter(r => r.veiculoId === v.id);
-                    v.odometro = Math.max(0, ...regs.map(r => Number(r.odometro) || 0));
+                    const maxRestante = Math.max(0, ...regs.map(r => Number(r.odometro) || 0));
+                    if (maxRestante > 0 && maxRestante < (Number(v.odometro) || 0)) {
+                        v.odometro = maxRestante;
+                    } else if (!regs.length) {
+                        v.odometro = 0;
+                    }
                 }
                 salvarDB(); renderizarApp();
             }
@@ -3417,63 +3516,69 @@
                         <input id="inpValor" type="number" step="0.01" value="${item.valorTotal}" oninput="calcularAbast('total')" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
                     </div>
                     <div>
-                        <label class="text-xs text-gray-400">Odômetro Atual (km)</label>
+                        <label class="text-xs text-gray-400">Odômetro (km)</label>
                         <input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${esc(item.data)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                    <div><label class="text-xs text-gray-400">Hora</label><input id="inpHora" type="time" value="${esc(item.hora)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="text-xs text-gray-400">Posto de Combustível</label>
-                        <select id="inpPosto" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                            <option value="">Selecione um posto...</option>
-                            ${optionsPostos}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-400">Tipo de Combustível</label>
+                        <label class="text-xs text-gray-400">Combustível</label>
                         <select id="inpCombustivel" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                            <option value="gasolina_comum" ${item.combustivel === 'gasolina_comum' || !item.combustivel ? 'selected' : ''}>Gasolina Comum</option>
+                            <option value="gasolina_comum" ${(item.combustivel || 'gasolina_comum') === 'gasolina_comum' ? 'selected' : ''}>Gasolina Comum</option>
                             <option value="gasolina_aditivada" ${item.combustivel === 'gasolina_aditivada' ? 'selected' : ''}>Gasolina Aditivada</option>
                             <option value="etanol" ${item.combustivel === 'etanol' ? 'selected' : ''}>Etanol</option>
                             <option value="diesel" ${item.combustivel === 'diesel' ? 'selected' : ''}>Diesel</option>
-                            <option value="gnv" ${item.combustivel === 'gnv' ? 'selected' : ''}>GNV</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">Tipo de Abastecimento</label>
+                        <select id="inpTanqueCheio" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                            <option value="true" ${item.tanqueCheio !== false ? 'selected' : ''}>Tanque Cheio (Fecha Ciclo)</option>
+                            <option value="false" ${item.tanqueCheio === false ? 'selected' : ''}>Parcial (Acumula Litros)</option>
                         </select>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 text-xs text-gray-300 pt-1">
-                    <input id="inpTanqueCheio" type="checkbox" ${item.tanqueCheio !== false ? 'checked' : ''}>
-                    <label for="inpTanqueCheio" class="cursor-pointer">Abastecimento com Tanque Cheio (fecha ciclo de consumo)</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${item.data}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Hora</label><input id="inpHora" type="time" value="${item.hora}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400">Posto</label>
+                    <input id="inpPosto" list="listaPostosCadastrados" value="${esc(item.posto)}" placeholder="Nome do posto..." class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                    <datalist id="listaPostosCadastrados">${optionsPostos}</datalist>
                 </div>
             `;
             document.getElementById('modalBtnSalvar').onclick = () => {
-                const novoOdometro = parseInt(document.getElementById('inpOdometro').value) || 0;
-                const nomePosto = document.getElementById('inpPosto').value;
+                let litros = parseFloat(document.getElementById('inpLitros').value) || 0;
+                let preco = parseFloat(document.getElementById('inpPrecoLitro').value) || 0;
+                let total = parseFloat(document.getElementById('inpValor').value) || 0;
+                if (litros <= 0 && total > 0 && preco > 0) litros = total / preco;
+                if (total <= 0 && litros > 0 && preco > 0) total = litros * preco;
+
+                let odo = parseInt(document.getElementById('inpOdometro').value) || 0;
                 const novoObjeto = {
                     id: id || Date.now(),
                     veiculoId: db.veiculoAtivoId,
-                    litros: parseFloat(document.getElementById('inpLitros').value) || 0,
-                    valorTotal: parseFloat(document.getElementById('inpValor').value) || 0,
-                    odometro: novoOdometro,
-                    data: document.getElementById('inpData').value,
-                    hora: document.getElementById('inpHora').value,
-                    posto: nomePosto,
+                    litros,
+                    valorTotal: total,
+                    odometro: odo,
+                    data: document.getElementById('inpData').value || dataLocalISO(),
+                    hora: document.getElementById('inpHora').value || '12:00',
+                    posto: document.getElementById('inpPosto').value.trim(),
                     combustivel: document.getElementById('inpCombustivel').value,
-                    tanqueCheio: document.getElementById('inpTanqueCheio').checked
+                    tanqueCheio: document.getElementById('inpTanqueCheio').value === 'true'
                 };
+                if (novoObjeto.litros <= 0 && novoObjeto.valorTotal <= 0) return;
+
                 if (id) {
                     const idx = db.abastecimentos.findIndex(a => a.id === id);
                     db.abastecimentos[idx] = novoObjeto;
-                } else db.abastecimentos.unshift(novoObjeto);
-
-                if (nomePosto && !db.locais.some(l => l.nome.toLowerCase() === nomePosto.toLowerCase())) {
-                    db.locais.unshift({ id: Date.now() + 10, nome: nomePosto, tipo: 'posto' });
+                } else {
+                    db.abastecimentos.unshift(novoObjeto);
                 }
-                const v = db.veiculos.find(ve => ve.id === db.veiculoAtivoId);
-                if (v && novoOdometro > v.odometro) v.odometro = novoOdometro;
+                const v = db.veiculos.find(item => item.id === db.veiculoAtivoId);
+                if (v && odo > v.odometro) v.odometro = odo;
+
                 salvarDB(); fecharModal(); renderizarApp();
             };
             document.getElementById('modalForm').classList.remove('hidden');
@@ -3483,139 +3588,129 @@
             const item = id ? db.manutencoes.find(m => m.id === id) : { 
                 oficina: '', odometro: (db.veiculos.find(v => v.id === db.veiculoAtivoId)?.odometro || 0), 
                 data: dataLocalISO(), 
+                hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false }), 
                 categoria: 'preventiva',
-                itens: [{ nome: '', valor: 0 }] 
+                itens: [] 
             };
-            tempManutencaoItens = item.itens ? JSON.parse(JSON.stringify(item.itens)) : [{ nome: '', valor: 0 }];
+            tempManutencaoItens = JSON.parse(JSON.stringify(item.itens || []));
             let optionsOficinas = db.locais.filter(l => l.tipo === 'oficina').map(o => `<option value="${esc(o.nome)}" ${item.oficina === o.nome ? 'selected' : ''}>${esc(o.nome)}</option>`).join('');
 
             document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-blue-400"></i> Editar Manutenção' : '<i class="fa-solid fa-wrench text-blue-400"></i> Nova Manutenção';
             document.getElementById('modalCorpo').innerHTML = `
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="text-xs text-gray-400">Oficina / Estabelecimento</label>
-                        <select id="inpOficina" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                            <option value="">Selecione uma oficina...</option>
-                            ${optionsOficinas}
-                        </select>
+                        <label class="text-xs text-gray-400">Oficina / Local</label>
+                        <input id="inpOficina" list="listaOficinasCadastradas" value="${esc(item.oficina)}" placeholder="Nome da oficina..." class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                        <datalist id="listaOficinasCadastradas">${optionsOficinas}</datalist>
                     </div>
                     <div>
-                        <label class="text-xs text-gray-400">Categoria de Custo</label>
-                        <select id="inpCategoriaManutencao" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                            <option value="preventiva" ${item.categoria === 'preventiva' || !item.categoria ? 'selected' : ''}>Manutenção Preventiva</option>
-                            <option value="corretiva" ${item.categoria === 'corretiva' ? 'selected' : ''}>Manutenção Corretiva</option>
-                            <option value="pneus" ${item.categoria === 'pneus' ? 'selected' : ''}>Pneus e Rodas</option>
-                            <option value="documentacao" ${item.categoria === 'documentacao' ? 'selected' : ''}>Documentação / IPVA / Taxas</option>
-                            <option value="outros" ${item.categoria === 'outros' ? 'selected' : ''}>Outros Custos Operacionais</option>
+                        <label class="text-xs text-gray-400">Categoria</label>
+                        <select id="inpManutCategoria" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                            <option value="preventiva" ${(item.categoria || 'preventiva') === 'preventiva' ? 'selected' : ''}>Preventiva</option>
+                            <option value="corretiva" ${item.categoria === 'corretiva' ? 'selected' : ''}>Corretiva</option>
+                            <option value="pneus" ${item.categoria === 'pneus' ? 'selected' : ''}>Pneus / Rodas</option>
+                            <option value="documentacao" ${item.categoria === 'documentacao' ? 'selected' : ''}>Documentação / Taxas</option>
                         </select>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
                     <div><label class="text-xs text-gray-400">Odômetro (km)</label><input id="inpOdometro" type="number" value="${item.odometro}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                    <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${esc(item.data)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                    <div><label class="text-xs text-gray-400">Hora</label><input id="inpHora" type="time" value="${esc(item.hora || '')}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Data</label><input id="inpData" type="date" value="${item.data}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                    <div><label class="text-xs text-gray-400">Hora</label><input id="inpHora" type="time" value="${item.hora}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
                 </div>
-                <div class="border-t border-gray-800 pt-3">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="text-xs font-bold text-gray-300">Serviços e Peças</label>
-                        <button onclick="adicionarItemTempManutencao()" type="button" class="bg-blue-600/30 text-blue-400 border border-blue-500/40 text-xs px-2.5 py-1 rounded font-bold flex items-center gap-1">
-                            <i class="fa-solid fa-plus"></i> Item
-                        </button>
+                <div class="bg-gray-800/50 p-3 rounded-lg border border-gray-700/80 space-y-2 mt-2">
+                    <span class="text-xs font-bold text-gray-300 block">Peças e Serviços Discriminados</span>
+                    <div class="grid grid-cols-3 gap-2">
+                        <input id="inpItemNome" placeholder="Ex: Óleo, Pastilha..." class="col-span-2 bg-gray-800 border border-gray-700 rounded p-2 text-xs text-white">
+                        <input id="inpItemValor" type="number" step="0.01" placeholder="Valor R$" class="bg-gray-800 border border-gray-700 rounded p-2 text-xs text-white">
                     </div>
-                    <div id="listaItensManutencao" class="space-y-2 max-h-36 overflow-y-auto pr-1"></div>
-                    <div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-800 font-bold text-sm">
-                        <span class="text-gray-400">Total:</span>
-                        <span id="totalManutencaoModal" class="text-emerald-400 text-base">R$ 0,00</span>
-                    </div>
+                    <button type="button" onclick="adicionarItemManutencao()" class="w-full bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 py-1.5 rounded-lg text-xs font-bold transition">+ Adicionar Item à Lista</button>
+                    <div id="listaTempItens" class="space-y-1 max-h-32 overflow-y-auto pt-1 text-xs"></div>
                 </div>
             `;
-            renderTempItensManutencao();
+            renderizarListaTempItens();
+
             document.getElementById('modalBtnSalvar').onclick = () => {
-                const novoOdometro = parseInt(document.getElementById('inpOdometro').value) || 0;
-                const nomeOficina = document.getElementById('inpOficina').value;
+                let odo = parseInt(document.getElementById('inpOdometro').value) || 0;
                 const novoObjeto = {
                     id: id || Date.now(),
                     veiculoId: db.veiculoAtivoId,
-                    oficina: nomeOficina,
-                    categoria: document.getElementById('inpCategoriaManutencao').value,
-                    odometro: novoOdometro,
-                    data: document.getElementById('inpData').value,
-                    hora: document.getElementById('inpHora')?.value || '',
-                    itens: tempManutencaoItens.map(it => ({ nome: it.nome, valor: parseFloat(it.valor) || 0 }))
+                    oficina: document.getElementById('inpOficina').value.trim(),
+                    categoria: document.getElementById('inpManutCategoria').value,
+                    odometro: odo,
+                    data: document.getElementById('inpData').value || dataLocalISO(),
+                    hora: document.getElementById('inpHora').value || '12:00',
+                    itens: tempManutencaoItens
                 };
+                if (!novoObjeto.oficina) return;
+                if (!novoObjeto.itens.length) novoObjeto.itens.push({ nome: "Serviço Geral", valor: 0 });
+
                 if (id) {
                     const idx = db.manutencoes.findIndex(m => m.id === id);
                     db.manutencoes[idx] = novoObjeto;
-                } else db.manutencoes.unshift(novoObjeto);
-
-                if (nomeOficina && !db.locais.some(l => l.nome.toLowerCase() === nomeOficina.toLowerCase())) {
-                    db.locais.unshift({ id: Date.now() + 11, nome: nomeOficina, tipo: 'oficina' });
+                } else {
+                    db.manutencoes.unshift(novoObjeto);
                 }
-                const v = db.veiculos.find(ve => ve.id === db.veiculoAtivoId);
-                if (v && novoOdometro > v.odometro) v.odometro = novoOdometro;
+                const v = db.veiculos.find(item => item.id === db.veiculoAtivoId);
+                if (v && odo > v.odometro) v.odometro = odo;
+
                 salvarDB(); fecharModal(); renderizarApp();
             };
             document.getElementById('modalForm').classList.remove('hidden');
         }
 
-        function renderTempItensManutencao() {
-            const container = document.getElementById('listaItensManutencao');
-            if(!container) return;
-            container.innerHTML = '';
-            let total = 0;
-            tempManutencaoItens.forEach((it, idx) => {
-                total += parseFloat(it.valor) || 0;
-                container.innerHTML += `
-                    <div class="flex gap-2 items-center mb-1">
-                        <input type="text" value="${esc(it.nome)}" oninput="tempManutencaoItens[${idx}].nome = this.value" placeholder="Serviço ou Peça" class="flex-1 bg-gray-800 border border-gray-700 rounded p-1.5 text-xs text-white">
-                        <input type="number" step="0.01" value="${it.valor}" oninput="tempManutencaoItens[${idx}].valor = parseFloat(this.value)||0; atualizarTotalManutencaoModal();" placeholder="R$" class="w-24 bg-gray-800 border border-gray-700 rounded p-1.5 text-xs text-white">
-                        <button onclick="removerItemTempManutencao(${idx})" class="text-red-400 hover:text-red-300 p-1"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                `;
-            });
-            document.getElementById('totalManutencaoModal').textContent = 'R$ ' + total.toFixed(2);
+        function adicionarItemManutencao() {
+            const nome = document.getElementById('inpItemNome').value.trim();
+            const valor = parseFloat(document.getElementById('inpItemValor').value) || 0;
+            if (!nome) return;
+            tempManutencaoItens.push({ nome, valor });
+            document.getElementById('inpItemNome').value = '';
+            document.getElementById('inpItemValor').value = '';
+            renderizarListaTempItens();
         }
 
-        function adicionarItemTempManutencao() {
-            tempManutencaoItens.push({ nome: '', valor: 0 });
-            renderTempItensManutencao();
+        function removerItemManutencao(index) {
+            tempManutencaoItens.splice(index, 1);
+            renderizarListaTempItens();
         }
 
-        function removerItemTempManutencao(idx) {
-            if (tempManutencaoItens.length <= 1) return;
-            tempManutencaoItens.splice(idx, 1);
-            renderTempItensManutencao();
-        }
-
-        function atualizarTotalManutencaoModal() {
-            let total = tempManutencaoItens.reduce((acc, i) => acc + (parseFloat(i.valor) || 0), 0);
-            document.getElementById('totalManutencaoModal').textContent = 'R$ ' + total.toFixed(2);
+        function renderizarListaTempItens() {
+            const div = document.getElementById('listaTempItens');
+            if (!div) return;
+            div.innerHTML = tempManutencaoItens.map((it, idx) => `
+                <div class="flex justify-between items-center bg-gray-900 px-2 py-1.5 rounded border border-gray-700/60">
+                    <span>${esc(it.nome)} — <strong class="text-emerald-400">R$ ${Number(it.valor).toFixed(2)}</strong></span>
+                    <button type="button" onclick="removerItemManutencao(${idx})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('');
         }
 
         function abrirModalAviso(id = null) {
-            const item = id ? db.avisos.find(a => a.id === id) : { titulo: '', tipo: 'km', limite: 0, limiteData: dataLocalISO(), recorrencia: 'nenhuma', status: 'ativo' };
-            const tipoAtual = item.tipo || 'km';
-            document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-yellow-400"></i> Editar Aviso' : '<i class="fa-solid fa-bell text-yellow-400"></i> Novo Aviso';
+            const item = id ? db.avisos.find(a => a.id === id) : { titulo: '', tipo: 'km', limite: (db.veiculos.find(v => v.id === db.veiculoAtivoId)?.odometro || 0) + 5000, limiteData: dataLocalISO(), recorrencia: 'nenhuma', status: 'ativo' };
+            document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-yellow-400"></i> Editar Aviso' : '<i class="fa-solid fa-bell text-yellow-400"></i> Novo Aviso / Lembrete';
             document.getElementById('modalCorpo').innerHTML = `
-                <div><label class="text-xs text-gray-400">Título do Aviso</label><input id="inpTitulo" value="${esc(item.titulo)}" placeholder="Ex: IPVA, Licenciamento..." class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                <div><label class="text-xs text-gray-400">Tipo de Alerta</label>
-                    <select id="inpTipoAviso" onchange="alternarTipoAvisoModal()" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                        <option value="km" ${tipoAtual === 'km' ? 'selected' : ''}>Por Quilometragem (km)</option>
-                        <option value="data" ${tipoAtual === 'data' ? 'selected' : ''}>Por Data (Calendário)</option>
-                    </select>
+                <div><label class="text-xs text-gray-400">Título do Aviso</label><input id="inpTitulo" value="${esc(item.titulo)}" placeholder="Ex: Troca de óleo..." class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs text-gray-400">Critério</label>
+                        <select id="inpTipoAviso" onchange="toggleCampoAviso()" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                            <option value="km" ${item.tipo === 'km' ? 'selected' : ''}>Quilometragem (km)</option>
+                            <option value="data" ${item.tipo === 'data' ? 'selected' : ''}>Data (Calendário)</option>
+                        </select>
+                    </div>
+                    <div id="campoKm" class="${item.tipo === 'data' ? 'hidden' : ''}">
+                        <label class="text-xs text-gray-400">Odômetro Limite (km)</label>
+                        <input id="inpLimite" type="number" value="${item.limite || ''}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                    </div>
+                    <div id="campoData" class="${item.tipo === 'data' ? '' : 'hidden'}">
+                        <label class="text-xs text-gray-400">Data Limite</label>
+                        <input id="inpLimiteData" type="date" value="${item.limiteData || ''}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                    </div>
                 </div>
-                <div id="blocoKmLimite" class="${tipoAtual === 'data' ? 'hidden' : ''}">
-                    <label class="text-xs text-gray-400">Limite em Quilômetros (km)</label>
-                    <input id="inpLimiteKm" type="number" value="${esc(item.limite || 0)}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                </div>
-                <div id="blocoDataLimite" class="${tipoAtual === 'km' ? 'hidden' : ''}">
-                    <label class="text-xs text-gray-400">Data de Vencimento</label>
-                    <input id="inpLimiteData" type="date" value="${esc(item.limiteData || dataLocalISO())}" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                </div>
-                <div id="blocoRecorrencia" class="${tipoAtual === 'km' ? 'hidden' : ''}">
-                    <label class="text-xs text-gray-400">Recorrência</label>
+                <div id="campoRecorrencia" class="${item.tipo === 'data' ? '' : 'hidden'}">
+                    <label class="text-xs text-gray-400">Repetir Automaticamente (Recorrência)</label>
                     <select id="inpRecorrencia" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
-                        <option value="nenhuma" ${item.recorrencia === 'nenhuma' ? 'selected' : ''}>Não se repete</option>
+                        <option value="nenhuma" ${item.recorrencia === 'nenhuma' ? 'selected' : ''}>Nenhuma (Apenas este vencimento)</option>
                         <option value="mensal" ${item.recorrencia === 'mensal' ? 'selected' : ''}>Mensal</option>
                         <option value="bimestral" ${item.recorrencia === 'bimestral' ? 'selected' : ''}>Bimestral</option>
                         <option value="trimestral" ${item.recorrencia === 'trimestral' ? 'selected' : ''}>Trimestral</option>
@@ -3625,138 +3720,231 @@
                 </div>
             `;
             document.getElementById('modalBtnSalvar').onclick = () => {
-                const tipo = document.getElementById('inpTipoAviso').value;
                 const novoObjeto = {
                     id: id || Date.now(),
                     veiculoId: db.veiculoAtivoId,
                     titulo: document.getElementById('inpTitulo').value.trim(),
-                    tipo,
-                    limite: tipo === 'km' ? (parseInt(document.getElementById('inpLimiteKm').value) || 0) : 0,
-                    limiteData: tipo === 'data' ? document.getElementById('inpLimiteData').value : '',
-                    recorrencia: tipo === 'data' ? document.getElementById('inpRecorrencia').value : 'nenhuma',
+                    tipo: document.getElementById('inpTipoAviso').value,
+                    limite: parseInt(document.getElementById('inpLimite').value) || 0,
+                    limiteData: document.getElementById('inpLimiteData').value || '',
+                    recorrencia: document.getElementById('inpRecorrencia').value || 'nenhuma',
                     status: 'ativo'
                 };
                 if (!novoObjeto.titulo) return;
                 if (id) {
                     const idx = db.avisos.findIndex(a => a.id === id);
                     db.avisos[idx] = novoObjeto;
-                } else db.avisos.unshift(novoObjeto);
+                } else {
+                    db.avisos.unshift(novoObjeto);
+                }
                 salvarDB(); fecharModal(); renderizarApp();
             };
             document.getElementById('modalForm').classList.remove('hidden');
         }
 
-        function alternarTipoAvisoModal() {
+        function toggleCampoAviso() {
             const tipo = document.getElementById('inpTipoAviso').value;
-            document.getElementById('blocoKmLimite').classList.toggle('hidden', tipo === 'data');
-            document.getElementById('blocoDataLimite').classList.toggle('hidden', tipo === 'km');
-            document.getElementById('blocoRecorrencia').classList.toggle('hidden', tipo === 'km');
+            if (tipo === 'data') {
+                document.getElementById('campoKm').classList.add('hidden');
+                document.getElementById('campoData').classList.remove('hidden');
+                document.getElementById('campoRecorrencia').classList.remove('hidden');
+            } else {
+                document.getElementById('campoKm').classList.remove('hidden');
+                document.getElementById('campoData').classList.add('hidden');
+                document.getElementById('campoRecorrencia').classList.add('hidden');
+            }
         }
 
         function abrirModalLocal(id = null) {
-            const item = id ? db.locais.find(l => l.id === id) : { nome: '', tipo: 'posto', endereco: '', latitude: '', longitude: '' };
+            const item = id ? db.locais.find(l => l.id === id) : { nome: '', tipo: 'posto', endereco: '' };
             document.getElementById('modalTitulo').innerHTML = id ? '<i class="fa-solid fa-pen text-red-400"></i> Editar Local' : '<i class="fa-solid fa-location-dot text-red-400"></i> Novo Local';
             document.getElementById('modalCorpo').innerHTML = `
-                <div><label class="text-xs text-gray-400">Nome do Local</label><input id="inpNome" value="${esc(item.nome)}" placeholder="Ex: Posto Shell, Oficina Modelo" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                <div><label class="text-xs text-gray-400">Tipo</label>
-                    <select id="inpTipo" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                <div><label class="text-xs text-gray-400">Nome do Local</label><input id="inpNomeLocal" value="${esc(item.nome)}" placeholder="Ex: Posto Ipiranga..." class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
+                <div>
+                    <label class="text-xs text-gray-400">Tipo</label>
+                    <select id="inpTipoLocal" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
                         <option value="posto" ${item.tipo === 'posto' ? 'selected' : ''}>Posto de Combustível</option>
-                        <option value="oficina" ${item.tipo === 'oficina' ? 'selected' : ''}>Oficina / Concessionária</option>
+                        <option value="oficina" ${item.tipo === 'oficina' ? 'selected' : ''}>Oficina Mecânica / Peças</option>
                     </select>
                 </div>
-                <div><label class="text-xs text-gray-400">Endereço (opcional)</label><input id="inpEnderecoLocal" value="${esc(item.endereco || '')}" placeholder="Rua, número, cidade" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1"></div>
-                <input id="inpLatitudeLocal" type="hidden" value="${esc(item.latitude ?? '')}">
-                <input id="inpLongitudeLocal" type="hidden" value="${esc(item.longitude ?? '')}">
-                <div class="space-y-1 pt-1">
-                    <button type="button" onclick="sugerirLocalPeloGPS()" id="btnSugerirLocalGPS" class="w-full bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2"><i class="fa-solid fa-location-crosshairs"></i> Sugerir por GPS (OpenStreetMap)</button>
-                    <p id="statusGPSLocal" class="text-xs text-gray-400 min-h-4"></p>
+                <div>
+                    <label class="text-xs text-gray-400">Endereço ou Referência</label>
+                    <input id="inpEnderecoLocal" value="${esc(item.endereco)}" placeholder="Ex: Av. Paulista, 1000" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                    <button type="button" onclick="sugerirLocalPorGPS()" id="btnGpsLocal" class="mt-2 w-full bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-location-crosshairs"></i> Sugerir por GPS (OpenStreetMap)
+                    </button>
+                    <p id="statusGpsLocal" class="text-[11px] text-gray-400 mt-1 hidden"></p>
                 </div>
             `;
             document.getElementById('modalBtnSalvar').onclick = () => {
-                const lat = document.getElementById('inpLatitudeLocal').value;
-                const lon = document.getElementById('inpLongitudeLocal').value;
                 const novoObjeto = {
                     id: id || Date.now(),
-                    nome: document.getElementById('inpNome').value.trim(),
-                    tipo: document.getElementById('inpTipo').value,
-                    endereco: document.getElementById('inpEnderecoLocal').value.trim(),
-                    latitude: lat === '' ? null : Number(lat),
-                    longitude: lon === '' ? null : Number(lon)
+                    nome: document.getElementById('inpNomeLocal').value.trim(),
+                    tipo: document.getElementById('inpTipoLocal').value,
+                    endereco: document.getElementById('inpEnderecoLocal').value.trim()
                 };
                 if (!novoObjeto.nome) return;
                 if (id) {
                     const idx = db.locais.findIndex(l => l.id === id);
                     db.locais[idx] = novoObjeto;
-                } else db.locais.unshift(novoObjeto);
+                } else {
+                    db.locais.unshift(novoObjeto);
+                }
                 salvarDB(); fecharModal(); renderizarApp();
             };
             document.getElementById('modalForm').classList.remove('hidden');
         }
 
-        async function sugerirLocalPeloGPS() {
-            const status = document.getElementById('statusGPSLocal');
-            const botao = document.getElementById('btnSugerirLocalGPS');
-            if (!navigator.geolocation) { status.textContent = 'GPS não suportado.'; return; }
-            botao.disabled = true;
-            status.textContent = 'Obtendo GPS...';
-            navigator.geolocation.getCurrentPosition(async pos => {
-                const lat = Number(pos.coords.latitude.toFixed(6));
-                const lon = Number(pos.coords.longitude.toFixed(6));
-                try {
-                    status.textContent = 'Consultando OpenStreetMap...';
-                    const espera = Math.max(0, 1100 - (Date.now() - ultimoAcessoNominatim));
-                    if (espera) await new Promise(r => setTimeout(r, espera));
+        function sugerirLocalPorGPS() {
+            const btn = document.getElementById('btnGpsLocal');
+            const statusEl = document.getElementById('statusGpsLocal');
+            if (!navigator.geolocation) {
+                statusEl.textContent = "Geolocalização não suportada pelo navegador.";
+                statusEl.className = "text-[11px] text-red-400 mt-1 block";
+                return;
+            }
+            const agora = Date.now();
+            if (agora - ultimoAcessoNominatim < 1200) {
+                statusEl.textContent = "Aguarde 1 segundo antes de buscar novamente.";
+                statusEl.className = "text-[11px] text-yellow-400 mt-1 block";
+                return;
+            }
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Buscando GPS...`;
+            statusEl.textContent = "Obtendo suas coordenadas de localização...";
+            statusEl.className = "text-[11px] text-blue-300 mt-1 block";
+
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
                     ultimoAcessoNominatim = Date.now();
-                    const configRes = await fetch('geocoder-config.json', { cache: 'no-store' });
-                    const configGeoc = await configRes.json();
-                    const url = new URL(configGeoc.reverseEndpoint);
-                    url.search = new URLSearchParams({ format: 'jsonv2', lat: String(lat), lon: String(lon), zoom: '18', addressdetails: '1', namedetails: '1', 'accept-language': 'pt-BR' }).toString();
-                    const res = await fetch(url.toString(), { headers: { 'Accept': 'application/json' } });
-                    const resultado = await res.json();
-                    const endereco = resultado.address || {};
-                    const nome = resultado.name || resultado.namedetails?.name || endereco.amenity || endereco.shop || '';
-                    if (nome) document.getElementById('inpNome').value = nome;
-                    if (resultado.display_name) document.getElementById('inpEnderecoLocal').value = resultado.display_name;
-                    document.getElementById('inpLatitudeLocal').value = lat;
-                    document.getElementById('inpLongitudeLocal').value = lon;
-                    status.textContent = nome ? 'Local sugerido preenchido!' : 'Endereço encontrado, preencha o nome.';
-                } catch (e) { status.textContent = 'Não foi possível consultar o endereço.'; }
-                finally { botao.disabled = false; }
-            }, err => { status.textContent = 'Permissão GPS negada.'; botao.disabled = false; });
-        }
+                    try {
+                        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
+                        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                        const data = await res.json();
+                        if (data && data.display_name) {
+                            const addr = data.address || {};
+                            const rua = addr.road || addr.pedestrian || addr.suburb || '';
+                            const num = addr.house_number || '';
+                            const bairro = addr.suburb || addr.neighbourhood || '';
+                            const cidade = addr.city || addr.town || addr.village || '';
 
-        // ==========================================
-        // EXPORTAÇÕES E IMPORTAÇÕES
-        // ==========================================
-        function exportarTodosVeiculosExcel() {
-            let h = '<html><head><meta charset="UTF-8"></head><body><h1>Relatório Geral de Frota - DriveStats</h1>';
-            db.veiculos.forEach(v => {
-                const abasts = db.abastecimentos.filter(a => a.veiculoId === v.id);
-                const manuts = db.manutencoes.filter(m => m.veiculoId === v.id);
-                h += `<h2>VEÍCULO: ${esc(v.nome)} (${esc(v.placa)})</h2><table border="1"><tr><th>Data</th><th>KM</th><th>Litros</th><th>Valor</th><th>Posto</th></tr>`;
-                abasts.forEach(a => h += `<tr><td>${esc(a.data)}</td><td>${a.odometro}</td><td>${a.litros}</td><td>${a.valorTotal}</td><td>${esc(a.posto || '')}</td></tr>`);
-                h += '</table><br>';
-            });
-            h += '</body></html>';
-            const b = new Blob([h], { type: 'application/vnd.ms-excel' });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'drivestats_frota.xls'; a.click(); a.remove();
-        }
+                            let nomeSugerido = addr.amenity || addr.shop || addr.building || '';
+                            if (!nomeSugerido && data.name) nomeSugerido = data.name;
+                            if (!nomeSugerido) nomeSugerido = rua ? `Ponto em ${rua}` : `Local GPS (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
 
-        function exportarExcelCompleto() {
-            const v = db.veiculos.find(ve => ve.id === db.veiculoAtivoId) || db.veiculos[0];
-            const abasts = db.abastecimentos.filter(a => a.veiculoId === v.id);
-            let h = `<html><head><meta charset="UTF-8"></head><body><h2>${esc(v.nome)} - Histórico</h2><table border="1"><tr><th>Data</th><th>Odômetro</th><th>Litros</th><th>Valor</th><th>Posto</th></tr>`;
-            abasts.forEach(a => h += `<tr><td>${esc(a.data)}</td><td>${a.odometro}</td><td>${a.litros}</td><td>${a.valorTotal}</td><td>${esc(a.posto || '')}</td></tr>`);
-            h += '</table></body></html>';
-            const b = new Blob([h], { type: 'application/vnd.ms-excel' });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `drivestats_${v.nome}.xls`; a.click(); a.remove();
+                            let endSugerido = [rua, num ? `nº ${num}` : '', bairro, cidade].filter(Boolean).join(', ');
+                            if (!endSugerido) endSugerido = data.display_name;
+
+                            document.getElementById('inpNomeLocal').value = nomeSugerido;
+                            document.getElementById('inpEnderecoLocal').value = endSugerido;
+
+                            statusEl.innerHTML = `<i class="fa-solid fa-check mr-1"></i> Sugestão preenchida! Confira e ajuste se necessário.`;
+                            statusEl.className = "text-[11px] text-emerald-400 mt-1 block";
+                        } else {
+                            statusEl.textContent = "Não foi possível obter o nome do local. Digite manualmente.";
+                            statusEl.className = "text-[11px] text-yellow-400 mt-1 block";
+                        }
+                    } catch (e) {
+                        statusEl.textContent = "Erro de rede ao consultar OpenStreetMap. Digite manualmente.";
+                        statusEl.className = "text-[11px] text-red-400 mt-1 block";
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = `<i class="fa-solid fa-location-crosshairs"></i> Sugerir por GPS (OpenStreetMap)`;
+                    }
+                },
+                (err) => {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-location-crosshairs"></i> Sugerir por GPS (OpenStreetMap)`;
+                    if (err.code === 1) {
+                        statusEl.textContent = "Permissão de GPS negada. Digite o endereço manualmente.";
+                    } else {
+                        statusEl.textContent = "Não foi possível obter a posição GPS. Tente novamente.";
+                    }
+                    statusEl.className = "text-[11px] text-red-400 mt-1 block";
+                },
+                { timeout: 8000 }
+            );
         }
 
         function exportarCSV() {
-            const v = db.veiculos.find(ve => ve.id === db.veiculoAtivoId) || db.veiculos[0];
-            const abasts = db.abastecimentos.filter(a => a.veiculoId === v.id);
-            const csv = '\uFEFFData;Hora;Odometro;Litros;ValorTotal;Posto\r\n' + abasts.map(a => `"${a.data}";"${a.hora||''}";${a.odometro};${a.litros};${a.valorTotal};"${a.posto||''}"`).join('\r\n');
-            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `drivestats_${v.nome}.csv`; a.click(); a.remove();
+            const v = db.veiculos.find(item => item.id === db.veiculoAtivoId) || db.veiculos[0];
+            let csv = "\uFEFFTipo;Data;Hora;Odometro;Descricao;Valor_Total_RS\n";
+            db.abastecimentos.filter(a => a.veiculoId === v.id).forEach(a => {
+                csv += `Abastecimento;${a.data};${a.hora};${a.odometro};${a.litros}L no ${a.posto || 'Posto'};${a.valorTotal.toFixed(2).replace('.', ',')}\n`;
+            });
+            db.manutencoes.filter(m => m.veiculoId === v.id).forEach(m => {
+                const totalM = (m.itens || []).reduce((acc, i) => acc + i.valor, 0);
+                const itensStr = (m.itens || []).map(i => i.nome).join(', ');
+                csv += `Manutencao;${m.data};${m.hora};${m.odometro};${m.oficina}: ${itensStr};${totalM.toFixed(2).replace('.', ',')}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `drivestats_${sanitizarNomeArquivo(v.nome)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportarExcelCompleto() {
+            const v = db.veiculos.find(item => item.id === db.veiculoAtivoId) || db.veiculos[0];
+            let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head><meta charset="utf-8"><style>table{border-collapse:collapse;width:100%}th{background:#10b981;color:#fff;font-weight:bold;border:1px solid #ccc;padding:6px}td{border:1px solid #ccc;padding:5px}</style></head>
+            <body><h2>DriveStats - Relatório: ${esc(v.nome)} (${esc(v.placa)})</h2>
+            <h3>Abastecimentos</h3><table><tr><th>Data</th><th>Hora</th><th>Odômetro (km)</th><th>Litros</th><th>Posto</th><th>Valor Total (R$)</th></tr>`;
+            db.abastecimentos.filter(a => a.veiculoId === v.id).forEach(a => {
+                html += `<tr><td>${esc(a.data)}</td><td>${esc(a.hora)}</td><td>${a.odometro}</td><td>${a.litros.toFixed(2).replace('.', ',')}</td><td>${esc(a.posto || '-')}</td><td>${a.valorTotal.toFixed(2).replace('.', ',')}</td></tr>`;
+            });
+            html += `</table><h3>Manutenções</h3><table><tr><th>Data</th><th>Hora</th><th>Odômetro (km)</th><th>Oficina</th><th>Peças e Serviços</th><th>Total (R$)</th></tr>`;
+            db.manutencoes.filter(m => m.veiculoId === v.id).forEach(m => {
+                const totalM = (m.itens || []).reduce((acc, i) => acc + i.valor, 0);
+                const itensStr = (m.itens || []).map(i => `${i.nome} (R$ ${i.valor.toFixed(2)})`).join(', ');
+                html += `<tr><td>${esc(m.data)}</td><td>${esc(m.hora)}</td><td>${m.odometro}</td><td>${esc(m.oficina)}</td><td>${esc(itensStr)}</td><td>${totalM.toFixed(2).replace('.', ',')}</td></tr>`;
+            });
+            html += `</table></body></html>`;
+
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `drivestats_${sanitizarNomeArquivo(v.nome)}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportarTodosVeiculosExcel() {
+            let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head><meta charset="utf-8"><style>table{border-collapse:collapse;width:100%}th{background:#059669;color:#fff;font-weight:bold;border:1px solid #ccc;padding:6px}td{border:1px solid #ccc;padding:5px}</style></head>
+            <body><h2>DriveStats - Frota Completa</h2>`;
+            db.veiculos.forEach(v => {
+                html += `<h3>${esc(v.nome)} (${esc(v.placa)}) - Odômetro: ${v.odometro} km</h3><table><tr><th>Tipo</th><th>Data</th><th>Hora</th><th>Odômetro</th><th>Detalhes</th><th>Valor Total (R$)</th></tr>`;
+                db.abastecimentos.filter(a => a.veiculoId === v.id).forEach(a => {
+                    html += `<tr><td>Abastecimento</td><td>${esc(a.data)}</td><td>${esc(a.hora)}</td><td>${a.odometro}</td><td>${a.litros}L no ${esc(a.posto || 'Posto')}</td><td>${a.valorTotal.toFixed(2).replace('.', ',')}</td></tr>`;
+                });
+                db.manutencoes.filter(m => m.veiculoId === v.id).forEach(m => {
+                    const totalM = (m.itens || []).reduce((acc, i) => acc + i.valor, 0);
+                    const itensStr = (m.itens || []).map(i => `${i.nome} (R$ ${i.valor.toFixed(2)})`).join(', ');
+                    html += `<tr><td>Manutenção</td><td>${esc(m.data)}</td><td>${esc(m.hora)}</td><td>${m.odometro}</td><td>${esc(m.oficina)}: ${esc(itensStr)}</td><td>${totalM.toFixed(2).replace('.', ',')}</td></tr>`;
+                });
+                html += `</table><br>`;
+            });
+            html += `</body></html>`;
+
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `drivestats_frota_completa.xls`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
         }
 
         function triggerImportarExcel() {
@@ -3766,26 +3954,73 @@
         function importarDadosExcelCSV(event) {
             const file = event.target.files[0];
             if (!file) return;
+
             const reader = new FileReader();
             reader.onload = function(e) {
-                const texto = e.target.result;
-                if (!/\.(txt|json)$/i.test(file.name)) {
-                    alert('Para importar um backup completo do DriveStats, selecione um arquivo .txt ou .json.');
-                    event.target.value = '';
-                    return;
-                }
-                if (/\.(txt|json)$/i.test(file.name)) {
+                const content = e.target.result;
+                if (content.trim().startsWith('{')) {
                     try {
-                        const dados = JSON.parse(texto);
-                        if (!validarBanco(dados)) throw new Error('Estrutura inválida');
-                        if (!confirm('Este backup substituirá os dados atuais. Deseja continuar?')) return;
+                        const dados = JSON.parse(content);
+                        if (!validarBanco(dados)) { alert("Arquivo JSON não possui estrutura válida do DriveStats."); return; }
                         db = normalizarBanco(dados);
                         salvarDB(); inicializarApp();
-                        alert('Backup importado com sucesso!');
-                    } catch (err) { alert('Arquivo de backup inválido.'); }
+                        alert("Backup completo restaurado com sucesso!");
+                        return;
+                    } catch(err) {
+                        alert("Erro ao processar backup.");
+                        return;
+                    }
                 }
+
+                const lines = content.split(/\r?\n/).filter(l => l.trim().length > 0);
+                if (lines.length < 2) { alert("Arquivo sem dados válidos."); return; }
+                const sep = lines[0].includes(';') ? ';' : ',';
+                let importadosAbast = 0, importadosManut = 0;
+
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(sep).map(c => c.replace(/^"|"$/g, '').trim());
+                    if (cols.length < 6) continue;
+                    const tipo = cols[0].toLowerCase();
+                    const data = cols[1] || dataLocalISO();
+                    const hora = cols[2] || '12:00';
+                    const odometro = parseInt(cols[3].replace(/\D/g, '')) || 0;
+                    const desc = cols[4] || '';
+                    const valorTotal = parseFloat(cols[5].replace(/[^\d,.]/g, '').replace(',', '.')) || 0;
+
+                    if (tipo.includes('abast')) {
+                        const litrosMatch = desc.match(/([\d,.]+)\s*L/i);
+                        const litros = litrosMatch ? parseFloat(litrosMatch[1].replace(',', '.')) : (valorTotal / 6.0);
+                        const postoMatch = desc.split('no ').pop() || 'Posto Importado';
+                        db.abastecimentos.unshift({
+                            id: Date.now() + Math.floor(Math.random() * 10000),
+                            veiculoId: db.veiculoAtivoId, data, hora, odometro, litros, valorTotal, posto: postoMatch, tanqueCheio: true
+                        });
+                        importadosAbast++;
+                    } else if (tipo.includes('manut')) {
+                        const parts = desc.split(':');
+                        const oficina = parts[0] || 'Oficina Importada';
+                        const itensTxt = parts[1] || desc;
+                        const itensArr = itensTxt.split(',').map(s => ({ nome: s.trim() || 'Serviço', valor: valorTotal }));
+                        db.manutencoes.unshift({
+                            id: Date.now() + Math.floor(Math.random() * 10000),
+                            veiculoId: db.veiculoAtivoId, data, hora, odometro, oficina, categoria: 'preventiva', itens: itensArr
+                        });
+                        importadosManut++;
+                    }
+                }
+
+                if (importadosAbast > 0 || importadosManut > 0) {
+                    const maxOdo = Math.max(...db.abastecimentos.filter(a => a.veiculoId === db.veiculoAtivoId).map(a => a.odometro), ...db.manutencoes.filter(m => m.veiculoId === db.veiculoAtivoId).map(m => m.odometro), 0);
+                    const v = db.veiculos.find(item => item.id === db.veiculoAtivoId);
+                    if (v && maxOdo > v.odometro) v.odometro = maxOdo;
+                    salvarDB(); renderizarApp();
+                    alert(`Importação concluída! ${importadosAbast} abastecimento(s) e ${importadosManut} manutenção(ões) adicionados.`);
+                } else {
+                    alert("Nenhum registro válido encontrado no arquivo.");
+                }
+                event.target.value = '';
             };
-            reader.readAsText(file);
+            reader.readAsText(file, 'utf-8');
         }
     </script>
 </body>
