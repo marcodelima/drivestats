@@ -1496,6 +1496,16 @@
         // ==========================================
         // HELPERS PARA PROPULSÃO (COMBUSTÃO VS EV)
         // ==========================================
+        function calcularDiasRestantesISO(dataISO) {
+            if (!dataISO) return Infinity;
+            const hojeStr = dataLocalISO();
+            const [hAno, hMes, hDia] = hojeStr.split('-').map(Number);
+            const [lAno, lMes, lDia] = String(dataISO).slice(0, 10).split('-').map(Number);
+            const utcHoje = Date.UTC(hAno, hMes - 1, hDia);
+            const utcLimite = Date.UTC(lAno, lMes - 1, lDia);
+            return Math.round((utcLimite - utcHoje) / (1000 * 60 * 60 * 24));
+        }
+
         function isVeiculoEletrico(v) {
             return Boolean(v && (v.tipo === 'carro_eletrico' || v.tipo === 'moto_eletrica'));
         }
@@ -2321,18 +2331,37 @@
             const custoCombKm = kmCheios > 0 ? (ciclos.reduce((s, c) => s + c.valorConsumido, 0) / kmCheios) : 0;
             const custoTotalKm = kmCheios > 0 ? (gastoTotal / kmCheios) : 0;
 
+            const margemKm = Number(db.configuracoes?.margemAlertaKm) || 500;
+            const margemDias = Number(db.configuracoes?.margemAlertaDias) || 15;
+
+            let qtdAvisosVencidos = 0;
+            avisos.forEach(av => {
+                if (av.tipo === 'km') {
+                    const diffKm = (Number(av.limite) || 0) - (Number(veiculo.odometro) || 0);
+                    if (diffKm < 0) qtdAvisosVencidos++;
+                } else {
+                    const diffDias = calcularDiasRestantesISO(av.limiteData);
+                    if (diffDias < 0) qtdAvisosVencidos++;
+                }
+            });
+
             const planos = (db.planosPreventivos || []).filter(p => p.veiculoId === veiculo.id);
             let qtdPrevVencidas = 0;
+            let qtdPrevAlerta = 0;
             planos.forEach(p => {
-                const st = DriveStatsAnalytics.calcularStatusPreventiva(p, veiculo.odometro, new Date(), db.configuracoes?.margemAlertaKm, db.configuracoes?.margemAlertaDias);
+                const st = DriveStatsAnalytics.calcularStatusPreventiva(p, veiculo.odometro, new Date(), margemKm, margemDias);
                 if (st.status === 'vencida') qtdPrevVencidas++;
+                if (st.status !== 'em_dia') qtdPrevAlerta++;
             });
+
+            const totalVencidas = qtdAvisosVencidos + qtdPrevVencidas;
+            const totalAvisosAtivos = avisos.length + qtdPrevAlerta;
 
             document.getElementById('statOdometro').textContent = `${veiculo.odometro.toLocaleString()} km`;
             document.getElementById('statGastoTotal').textContent = 'R$ ' + gastoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
             document.getElementById('statGastoMesAtual').textContent = 'Mês: R$ ' + gastoMesAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            document.getElementById('statQtdAlertas').textContent = avisos.length + planos.filter(p => DriveStatsAnalytics.calcularStatusPreventiva(p, veiculo.odometro).status !== 'em_dia').length;
-            document.getElementById('statQtdPrevVencidas').textContent = `${qtdPrevVencidas} vencida(s)`;
+            document.getElementById('statQtdAlertas').textContent = totalAvisosAtivos;
+            document.getElementById('statQtdPrevVencidas').textContent = `${totalVencidas} vencida(s)`;
             document.getElementById('statMediaConsumo').textContent = mediaConsumo > 0 ? `${mediaConsumo.toFixed(1)} ${unConsumo}` : `0.0 ${unConsumo}`;
             document.getElementById('statCustoCombKm').textContent = `R$ ${custoCombKm.toFixed(2)} / km`;
             document.getElementById('statCustoComb100Km').textContent = `R$ ${(custoCombKm * 100).toFixed(2)} / 100 km`;
@@ -2833,16 +2862,19 @@
         function renderizarSubabaPreventiva(veiculoTargetId) {
             const container = document.getElementById('listaPlanosPreventivos');
             if (!container) return;
-            const veiculo = db.veiculos.find(v => v.id === (veiculoTargetId || db.veiculoAtivoId)) || db.veiculos[0];
-            const planos = (db.planosPreventivos || []).filter(p => p.veiculoId === veiculo.id);
+            const mostrarTodos = filtroAnaliseEstado.veiculoId === 'todos';
+            const veiculoPadrao = db.veiculos.find(v => v.id === (veiculoTargetId || db.veiculoAtivoId)) || db.veiculos[0];
+            const planos = mostrarTodos
+                ? (db.planosPreventivos || [])
+                : (db.planosPreventivos || []).filter(p => p.veiculoId === veiculoPadrao.id);
 
             if (!planos.length) {
                 container.innerHTML = `
                     <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl text-center space-y-3">
                         <i class="fa-solid fa-screwdriver-wrench text-3xl text-gray-600"></i>
-                        <p class="text-xs text-gray-400">Nenhum componente preventivo monitorado para "${esc(veiculo.nome)}".</p>
+                        <p class="text-xs text-gray-400">${mostrarTodos ? 'Nenhum componente preventivo monitorado na frota.' : `Nenhum componente preventivo monitorado para "${esc(veiculoPadrao.nome)}".`}</p>
                         <button onclick="carregarPresetsPreventivaVeiculo()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition">
-                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Carregar Presets Recomendados (${esc(getLabelTipoVeiculo(veiculo.tipo))})
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Carregar Presets Recomendados (${esc(getLabelTipoVeiculo(veiculoPadrao.tipo))})
                         </button>
                     </div>
                 `;
@@ -2850,6 +2882,7 @@
             }
 
             container.innerHTML = planos.map(plano => {
+                const veiculo = db.veiculos.find(v => v.id === plano.veiculoId) || veiculoPadrao;
                 const st = DriveStatsAnalytics.calcularStatusPreventiva(
                     plano, veiculo.odometro, new Date(),
                     db.configuracoes?.margemAlertaKm, db.configuracoes?.margemAlertaDias
@@ -3063,15 +3096,59 @@
                     return tA - tB || (a.id || 0) - (b.id || 0);
                 });
 
-                for (let i = 1; i < regs.length; i++) {
-                    if (regs[i].odometro < regs[i - 1].odometro) {
+                const chavesVistas = new Set();
+
+                for (let i = 0; i < regs.length; i++) {
+                    const r = regs[i];
+                    const chaveDup = `${r.tipo}|${r.data}|${r.hora || '12:00'}|${r.odometro}`;
+                    if (chavesVistas.has(chaveDup)) {
+                        inconsistencias.push({
+                            tipo: 'Possível Duplicidade',
+                            veiculo: v.nome,
+                            detalhes: `${r.tipo} duplicado em ${r.data} às ${r.hora || '12:00'} no odômetro ${Number(r.odometro).toLocaleString()} km`
+                        });
+                    } else {
+                        chavesVistas.add(chaveDup);
+                    }
+
+                    if (i > 0 && (Number(r.odometro) || 0) < (Number(regs[i - 1].odometro) || 0)) {
                         inconsistencias.push({
                             tipo: 'Odômetro Regressivo',
                             veiculo: v.nome,
-                            detalhes: `${regs[i].tipo} em ${regs[i].data} (${regs[i].odometro} km) é menor que ${regs[i - 1].tipo} em ${regs[i - 1].data} (${regs[i - 1].odometro} km)`
+                            detalhes: `${r.tipo} em ${r.data} (${Number(r.odometro).toLocaleString()} km) é menor que ${regs[i - 1].tipo} em ${regs[i - 1].data} (${Number(regs[i - 1].odometro).toLocaleString()} km)`
                         });
                     }
                 }
+
+                db.abastecimentos.filter(a => a.veiculoId === v.id).forEach(a => {
+                    const unQtd = getUnidadeQuantidade(v);
+                    const rotulo = isVeiculoEletrico(v) ? 'Recarga' : 'Abastecimento';
+                    if (!(Number(a.litros) > 0)) {
+                        inconsistencias.push({
+                            tipo: 'Quantidade Zerada / Inválida',
+                            veiculo: v.nome,
+                            detalhes: `${rotulo} em ${a.data} (${Number(a.odometro).toLocaleString()} km) possui quantidade ${a.litros} ${unQtd}`
+                        });
+                    }
+                    if (!(Number(a.valorTotal) > 0)) {
+                        inconsistencias.push({
+                            tipo: 'Valor Zerado / Inválido',
+                            veiculo: v.nome,
+                            detalhes: `${rotulo} em ${a.data} (${Number(a.odometro).toLocaleString()} km) possui valor total R$ ${(Number(a.valorTotal) || 0).toFixed(2)}`
+                        });
+                    }
+                });
+
+                db.manutencoes.filter(m => m.veiculoId === v.id).forEach(m => {
+                    const somaItens = (m.itens || []).reduce((s, it) => s + (Number(it.valor) || 0), 0);
+                    if (!(somaItens > 0)) {
+                        inconsistencias.push({
+                            tipo: 'Manutenção Sem Custo / Zerada',
+                            veiculo: v.nome,
+                            detalhes: `Manutenção em ${m.data} (${Number(m.odometro).toLocaleString()} km) soma R$ ${somaItens.toFixed(2)}`
+                        });
+                    }
+                });
             });
 
             if (inconsistencias.length === 0) {
@@ -3463,28 +3540,27 @@
         function renderizarAlertasDestaque(avisos, planos, odometroAtual) {
             const container = document.getElementById('secaoAlertasDestaque');
             const lista = document.getElementById('listaAlertasDestaque');
-            const hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
-
+            const margemKm = Number(db.configuracoes?.margemAlertaKm) || 500;
+            const margemDias = Number(db.configuracoes?.margemAlertaDias) || 15;
             const alertasVisiveis = [];
 
             avisos.forEach(av => {
                 if (av.tipo === 'km') {
-                    const diff = av.limite - odometroAtual;
-                    if (diff <= (db.configuracoes?.margemAlertaKm || 500)) {
+                    const limiteKm = Number(av.limite) || 0;
+                    const diff = limiteKm - (Number(odometroAtual) || 0);
+                    if (diff <= margemKm) {
                         alertasVisiveis.push({
                             texto: av.titulo,
-                            detalhe: diff < 0 ? `Vencido há ${Math.abs(diff)} km` : `Vence em ${diff} km (${av.limite} km)`,
+                            detalhe: diff < 0 ? `Vencido há ${Math.abs(diff).toLocaleString()} km` : `Vence em ${diff.toLocaleString()} km (${limiteKm.toLocaleString()} km)`,
                             critico: diff < 0
                         });
                     }
                 } else {
-                    const dataLimite = new Date(av.limiteData + 'T00:00:00');
-                    const diffDias = Math.ceil((dataLimite - hoje) / (1000 * 60 * 60 * 24));
-                    if (diffDias <= (db.configuracoes?.margemAlertaDias || 15)) {
+                    const diffDias = calcularDiasRestantesISO(av.limiteData);
+                    if (diffDias <= margemDias) {
                         alertasVisiveis.push({
                             texto: av.titulo,
-                            detalhe: diffDias < 0 ? `Vencido há ${Math.abs(diffDias)} dias` : `Vence em ${diffDias} dias`,
+                            detalhe: diffDias < 0 ? `Vencido há ${Math.abs(diffDias)} dia(s)` : (diffDias === 0 ? 'Vence hoje' : `Vence em ${diffDias} dia(s)`),
                             critico: diffDias < 0
                         });
                     }
@@ -3524,7 +3600,7 @@
                     : "São necessários pelo menos 2 abastecimentos registrados para projeção de autonomia.";
                 return;
             }
-            const ordenados = [...abasts].sort((a, b) => new Date(a.data + 'T00:00:00') - new Date(b.data + 'T00:00:00'));
+            const ordenados = [...abasts].sort((a, b) => (Number(a.odometro) || 0) - (Number(b.odometro) || 0) || new Date(a.data + 'T00:00:00') - new Date(b.data + 'T00:00:00') || (a.id || 0) - (b.id || 0));
             const distancias = [], intervalosDias = [];
             for (let i = 1; i < ordenados.length; i++) {
                 const dist = ordenados[i].odometro - ordenados[i - 1].odometro;
